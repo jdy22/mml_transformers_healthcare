@@ -1,0 +1,79 @@
+modality: mri                               # main image modality, must be one of mri, ct, pet
+data_file_base_dir: null                    # location of the dataset
+data_list_file_path: null                   # location of the file with a list of files image/label in the dataset
+
+input_channels: null
+output_classes: null
+
+class_names: null
+class_index: null
+
+quick: false
+
+roi_size: [128, 128, 128]
+crop_mode: ratio
+normalize_mode: meanstd
+
+amp: true
+bundle_root: null
+ckpt_path: "$@bundle_root + '/model'"
+ckpt_save: true
+cache_rate: null
+
+determ: false
+fold: 0
+learning_rate: 2.0e-4
+batch_size: $@num_images_per_batch
+num_images_per_batch: 1
+num_epochs: 300
+num_warmup_epochs: 3
+sigmoid: false
+resample: false
+resample_resolution: [1, 1, 1]
+intensity_bounds: null
+
+num_epochs_per_validation: 1
+num_epochs_per_saving: 1
+num_workers: 4
+
+loss:
+  _target_: DiceCELoss
+  include_background: true
+  squared_pred: true
+  smooth_nr: 0
+  smooth_dr: 1.0e-05
+  softmax: $not @sigmoid
+  sigmoid: $@sigmoid
+  to_onehot_y: $not @sigmoid
+
+optimizer:
+  _target_: torch.optim.AdamW
+  lr: "@learning_rate"
+  weight_decay: 1.e-5
+
+network:
+  _target_: SegResNetDS
+  init_filters: 32
+  blocks_down: [1, 2, 2, 4, 4]
+  norm: BATCH
+  in_channels: "@input_channels"
+  out_channels: "@output_classes"
+  dsdepth: 4
+
+
+finetune:
+  enabled: false
+  ckpt_name: "$@bundle_root + '/model/model.pt'"
+
+validate:
+  enabled: false
+  ckpt_name: "$@bundle_root + '/model/model.pt'"
+  output_path: "$@bundle_root + '/prediction_validation'"
+  save_mask: false
+  invert: true
+
+infer:
+  enabled: false
+  ckpt_name: "$@bundle_root + '/model/model.pt'"
+  output_path: "$@bundle_root + '/prediction_' + @infer#data_list_key"
+  data_list_key: testing
