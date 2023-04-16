@@ -1,6 +1,7 @@
 import numpy as np
 import SimpleITK as sitk
 import matplotlib.pyplot as plt
+from monai import transforms
 
 
 # Calculate parameters low and high from window and level
@@ -99,8 +100,42 @@ def display_image_and_labels(img, lbls, x=None, y=None, z=None, window=None, lev
     plt.show()
 
 
+def display_2d_tensor(img_tensor, lbls_tensor, x=None, y=None, window=None, level=None, colormap='gray'): 
+    width  = img_tensor.shape[0]
+    height = img_tensor.shape[1]
+    
+    if x is None:
+        x = np.floor(img_tensor.shape[0]/2).astype(int)
+    if y is None:
+        y = np.floor(img_tensor.shape[1]/2).astype(int)
+
+    array_transform = transforms.ToNumpy()
+    img_array = array_transform(img_tensor)
+    lbls_array = array_transform(lbls_tensor)
+    
+    if window is None:
+        window = np.max(img_array) - np.min(img_array)
+    
+    if level is None:
+        level = window / 2 + np.min(img_array)
+    
+    low, high = wl_to_lh(window,level)
+
+    window_lbls = np.max(lbls_array) - np.min(lbls_array)
+    level_lbls = window_lbls / 2 + np.min(lbls_array)
+    low_lbls, high_lbls = wl_to_lh(window_lbls,level_lbls)
+
+    # Display the slice
+    fig, ((ax1), (ax2)) = plt.subplots(2, 1, figsize=(3.5, 8))
+
+    ax1.imshow(img_array, cmap=colormap, clim=(low, high), extent=(0, width, height, 0))
+    ax2.imshow(lbls_array, cmap=colormap, clim=(low_lbls, high_lbls), extent=(0, width, height, 0))
+
+    plt.show()
+
+
 if __name__ == "__main__":
-    image_filename = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/imagesTr/amos_0510.nii.gz"
+    image_filename = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/imagesTr/amos_0124.nii.gz"
     image = sitk.ReadImage(image_filename)
     # display_image(image, window=350, level=50) # For CT images
     # display_image(image, window=600, level=200) # For MRI images
@@ -109,7 +144,7 @@ if __name__ == "__main__":
     img_array = sitk.GetArrayFromImage(image)
     print(img_array.shape)
 
-    labels_filename = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/labelsTr/amos_0510.nii.gz"
+    labels_filename = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/labelsTr/amos_0124.nii.gz"
     labels = sitk.ReadImage(labels_filename)
     # display_image(sitk.LabelToRGB(labels))
 

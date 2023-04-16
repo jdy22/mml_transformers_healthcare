@@ -73,12 +73,12 @@ parser.add_argument("--a_min", default=-175.0, type=float, help="a_min in ScaleI
 parser.add_argument("--a_max", default=250.0, type=float, help="a_max in ScaleIntensityRanged")
 parser.add_argument("--b_min", default=0.0, type=float, help="b_min in ScaleIntensityRanged")
 parser.add_argument("--b_max", default=1.0, type=float, help="b_max in ScaleIntensityRanged")
-parser.add_argument("--space_x", default=1.5, type=float, help="spacing in x direction")
-parser.add_argument("--space_y", default=1.5, type=float, help="spacing in y direction")
-parser.add_argument("--space_z", default=2.0, type=float, help="spacing in z direction")
+parser.add_argument("--space_x", default=1.0, type=float, help="spacing in x direction")
+parser.add_argument("--space_y", default=1.0, type=float, help="spacing in y direction")
+parser.add_argument("--space_z", default=10.0, type=float, help="spacing in z direction")
 parser.add_argument("--roi_x", default=96, type=int, help="roi size in x direction")
 parser.add_argument("--roi_y", default=96, type=int, help="roi size in y direction")
-parser.add_argument("--roi_z", default=96, type=int, help="roi size in z direction")
+parser.add_argument("--roi_z", default=-1, type=int, help="roi size in z direction")
 parser.add_argument("--dropout_rate", default=0.0, type=float, help="dropout rate")
 parser.add_argument("--RandFlipd_prob", default=0.2, type=float, help="RandFlipd aug probability")
 parser.add_argument("--RandRotate90d_prob", default=0.2, type=float, help="RandRotate90d aug probability")
@@ -97,3 +97,18 @@ if __name__ == "__main__":
     args = parser.parse_args()
     args.test_mode = False
     loader = get_loader(args)
+    train_loader=loader[0]
+    for idx, batch_data in enumerate(train_loader):
+        if isinstance(batch_data, list):
+            data, target = batch_data
+        else:
+            data, target = batch_data["image"], batch_data["label"]
+        print(idx)
+        print(data.shape)
+        print(target.shape) 
+
+    # Visualisation
+    from data_utils.visualise_data import display_2d_tensor
+    image = data[12, 0, :, :]
+    labels = target[12, 0, :, :]
+    display_2d_tensor(image, labels)
