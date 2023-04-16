@@ -100,12 +100,16 @@ def display_image_and_labels(img, lbls, x=None, y=None, z=None, window=None, lev
 
 
 if __name__ == "__main__":
-    image_filename = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/imagesTr/amos_0153.nii.gz"
+    image_filename = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/imagesTr/amos_0510.nii.gz"
     image = sitk.ReadImage(image_filename)
     # display_image(image, window=350, level=50) # For CT images
     # display_image(image, window=600, level=200) # For MRI images
+    print(image.GetSize())
+    print(image.GetSpacing())
+    img_array = sitk.GetArrayFromImage(image)
+    print(img_array.shape)
 
-    labels_filename = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/labelsTr/amos_0153.nii.gz"
+    labels_filename = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/labelsTr/amos_0510.nii.gz"
     labels = sitk.ReadImage(labels_filename)
     # display_image(sitk.LabelToRGB(labels))
 
