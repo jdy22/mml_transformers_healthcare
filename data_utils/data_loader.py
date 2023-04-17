@@ -81,8 +81,14 @@ def get_loader(args):
                 keys=["image"], a_min=args.a_min, a_max=args.a_max, b_min=args.b_min, b_max=args.b_max, clip=True
             ),
             transforms.CropForegroundd(keys=["image", "label"], source_key="image"),
-            transforms.SplitDimd(keys=["image", "label"], dim=-1, keepdim=False, list_output=True),
-            transforms.ToTensord(keys=["image", "label"]),
+            transforms.RandCropByLabelClassesd(
+                keys=["image", "label"],
+                label_key="label",
+                spatial_size=(args.roi_x, args.roi_y, args.roi_z),
+                ratios=[0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                num_classes=16,
+                num_samples=2,
+            ),
             # transforms.RandCropByPosNegLabeld(
             #     keys=["image", "label"],
             #     label_key="label",
@@ -93,11 +99,14 @@ def get_loader(args):
             #     image_key="image",
             #     image_threshold=0,
             # ),
-            # transforms.RandFlipd(keys=["image", "label"], prob=args.RandFlipd_prob, spatial_axis=0),
-            # transforms.RandFlipd(keys=["image", "label"], prob=args.RandFlipd_prob, spatial_axis=1),
-            # # transforms.RandRotate90d(keys=["image", "label"], prob=args.RandRotate90d_prob, max_k=3),
-            # transforms.RandScaleIntensityd(keys="image", factors=0.1, prob=args.RandScaleIntensityd_prob),
-            # transforms.RandShiftIntensityd(keys="image", offsets=0.1, prob=args.RandShiftIntensityd_prob),
+            transforms.RandFlipd(keys=["image", "label"], prob=args.RandFlipd_prob, spatial_axis=0),
+            transforms.RandFlipd(keys=["image", "label"], prob=args.RandFlipd_prob, spatial_axis=1),
+            transforms.RandRotate90d(keys=["image", "label"], prob=args.RandRotate90d_prob, max_k=3),
+            transforms.RandScaleIntensityd(keys="image", factors=0.1, prob=args.RandScaleIntensityd_prob),
+            transforms.RandShiftIntensityd(keys="image", offsets=0.1, prob=args.RandShiftIntensityd_prob),
+            # transforms.SplitDimd(keys=["image", "label"], dim=-1, keepdim=False, list_output=True),
+            transforms.SqueezeDimd(keys=["image", "label"], dim=-1),
+            transforms.ToTensord(keys=["image", "label"]),
         ]
     )
     val_transform = transforms.Compose(
@@ -112,6 +121,15 @@ def get_loader(args):
                 keys=["image"], a_min=args.a_min, a_max=args.a_max, b_min=args.b_min, b_max=args.b_max, clip=True
             ),
             transforms.CropForegroundd(keys=["image", "label"], source_key="image"),
+            transforms.RandCropByLabelClassesd(
+                keys=["image", "label"],
+                label_key="label",
+                spatial_size=(-1, -1, 1),
+                ratios=[0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                num_classes=16,
+                num_samples=5,
+            ),
+            transforms.SqueezeDimd(keys=["image", "label"], dim=-1),
             transforms.ToTensord(keys=["image", "label"]),
         ]
     )

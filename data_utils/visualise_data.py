@@ -4,6 +4,14 @@ import matplotlib.pyplot as plt
 from monai import transforms
 
 
+def plot_intensity_histogram(img):
+    # Convert SimpleITK image to NumPy array
+    img_array = sitk.GetArrayFromImage(img)
+
+    plt.hist(img_array.flatten(), bins=128, density=True)
+    plt.show()
+
+
 # Calculate parameters low and high from window and level
 def wl_to_lh(window, level):
     low = level - window/2
@@ -128,24 +136,23 @@ def display_2d_tensor(img_tensor, lbls_tensor, x=None, y=None, window=None, leve
     # Display the slice
     fig, ((ax1), (ax2)) = plt.subplots(2, 1, figsize=(3.5, 8))
 
-    ax1.imshow(img_array, cmap=colormap, clim=(low, high), extent=(0, width, height, 0))
-    ax2.imshow(lbls_array, cmap=colormap, clim=(low_lbls, high_lbls), extent=(0, width, height, 0))
+    ax1.imshow(np.transpose(img_array), cmap=colormap, clim=(low, high), extent=(0, width, height, 0))
+    ax2.imshow(np.transpose(lbls_array), cmap=colormap, clim=(low_lbls, high_lbls), extent=(0, width, height, 0))
 
     plt.show()
 
 
 if __name__ == "__main__":
-    image_filename = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/imagesTr/amos_0124.nii.gz"
+    image_filename = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/imagesTr/amos_0600.nii.gz"
     image = sitk.ReadImage(image_filename)
     # display_image(image, window=350, level=50) # For CT images
     # display_image(image, window=600, level=200) # For MRI images
-    print(image.GetSize())
-    print(image.GetSpacing())
-    img_array = sitk.GetArrayFromImage(image)
-    print(img_array.shape)
+    print(f"Image size: {image.GetSize()}")
+    print(f"Image spacing: {image.GetSpacing()}")
 
-    labels_filename = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/labelsTr/amos_0124.nii.gz"
+    labels_filename = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/labelsTr/amos_0600.nii.gz"
     labels = sitk.ReadImage(labels_filename)
     # display_image(sitk.LabelToRGB(labels))
 
-    display_image_and_labels(image, sitk.LabelToRGB(labels), window=350, level=50)
+    display_image_and_labels(image, sitk.LabelToRGB(labels), window=600, level=200)
+    plot_intensity_histogram(image)
