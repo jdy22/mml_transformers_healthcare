@@ -78,7 +78,7 @@ def get_loader(args):
                 keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
             ),
             transforms.ScaleIntensityRangePercentilesd(
-                keys=["image"], lower=1, upper=99, b_min=args.b_min, b_max=args.b_max, clip=True
+                keys=["image"], lower=args.lower, upper=args.upper, b_min=args.b_min, b_max=args.b_max, clip=True
             ),
             transforms.NormalizeIntensityd(keys=["image"]),
             # transforms.ScaleIntensityRanged(
@@ -91,7 +91,7 @@ def get_loader(args):
                 spatial_size=(args.roi_x, args.roi_y, args.roi_z),
                 ratios=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                 num_classes=16,
-                num_samples=2,
+                num_samples=args.train_samples,
             ),
             # transforms.RandCropByPosNegLabeld(
             #     keys=["image", "label"],
@@ -122,7 +122,7 @@ def get_loader(args):
                 keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
             ),
             transforms.ScaleIntensityRangePercentilesd(
-                keys=["image"], lower=1, upper=99, b_min=args.b_min, b_max=args.b_max, clip=True
+                keys=["image"], lower=args.lower, upper=args.upper, b_min=args.b_min, b_max=args.b_max, clip=True
             ),
             transforms.NormalizeIntensityd(keys=["image"]),
             # transforms.ScaleIntensityRanged(
@@ -135,7 +135,7 @@ def get_loader(args):
                 spatial_size=(-1, -1, 1),
                 ratios=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                 num_classes=16,
-                num_samples=5,
+                num_samples=args.val_samples,
             ),
             transforms.SqueezeDimd(keys=["image", "label"], dim=-1),
             transforms.ToTensord(keys=["image", "label"]),

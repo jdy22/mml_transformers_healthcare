@@ -20,8 +20,8 @@ import torch.multiprocessing as mp
 import torch.nn.parallel
 import torch.utils.data.distributed
 from networks.unetr_2d import UNETR_2D
-# from optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
-# from trainer import run_training
+from monai_research_contributions_main.UNETR.BTCV.optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
+from trainer import run_training
 from data_utils.data_loader import get_loader
 
 from monai.inferers import sliding_window_inference
@@ -65,12 +65,12 @@ parser.add_argument("--mlp_dim", default=3072, type=int, help="mlp dimention in 
 parser.add_argument("--hidden_size", default=768, type=int, help="hidden size dimention in ViT encoder")
 parser.add_argument("--feature_size", default=16, type=int, help="feature size dimention")
 parser.add_argument("--in_channels", default=1, type=int, help="number of input channels")
-parser.add_argument("--out_channels", default=14, type=int, help="number of output channels")
+parser.add_argument("--out_channels", default=16, type=int, help="number of output channels")
 parser.add_argument("--res_block", action="store_true", help="use residual blocks")
 parser.add_argument("--conv_block", action="store_true", help="use conv blocks")
 parser.add_argument("--use_normal_dataset", action="store_true", help="use monai Dataset class")
-parser.add_argument("--a_min", default=-175.0, type=float, help="a_min in ScaleIntensityRanged")
-parser.add_argument("--a_max", default=250.0, type=float, help="a_max in ScaleIntensityRanged")
+# parser.add_argument("--a_min", default=-175.0, type=float, help="a_min in ScaleIntensityRanged")
+# parser.add_argument("--a_max", default=250.0, type=float, help="a_max in ScaleIntensityRanged")
 parser.add_argument("--b_min", default=0.0, type=float, help="b_min in ScaleIntensityRanged")
 parser.add_argument("--b_max", default=1.0, type=float, help="b_max in ScaleIntensityRanged")
 parser.add_argument("--space_x", default=1.0, type=float, help="spacing in x direction")
@@ -80,10 +80,10 @@ parser.add_argument("--roi_x", default=128, type=int, help="roi size in x direct
 parser.add_argument("--roi_y", default=128, type=int, help="roi size in y direction")
 parser.add_argument("--roi_z", default=1, type=int, help="roi size in z direction")
 parser.add_argument("--dropout_rate", default=0.0, type=float, help="dropout rate")
-parser.add_argument("--RandFlipd_prob", default=0.2, type=float, help="RandFlipd aug probability")
-parser.add_argument("--RandRotate90d_prob", default=0.2, type=float, help="RandRotate90d aug probability")
-parser.add_argument("--RandScaleIntensityd_prob", default=0.1, type=float, help="RandScaleIntensityd aug probability")
-parser.add_argument("--RandShiftIntensityd_prob", default=0.1, type=float, help="RandShiftIntensityd aug probability")
+# parser.add_argument("--RandFlipd_prob", default=0.2, type=float, help="RandFlipd aug probability")
+# parser.add_argument("--RandRotate90d_prob", default=0.2, type=float, help="RandRotate90d aug probability")
+# parser.add_argument("--RandScaleIntensityd_prob", default=0.1, type=float, help="RandScaleIntensityd aug probability")
+# parser.add_argument("--RandShiftIntensityd_prob", default=0.1, type=float, help="RandShiftIntensityd aug probability")
 parser.add_argument("--infer_overlap", default=0.5, type=float, help="sliding window inference overlap")
 parser.add_argument("--lrschedule", default="warmup_cosine", type=str, help="type of learning rate scheduler")
 parser.add_argument("--warmup_epochs", default=50, type=int, help="number of warmup epochs")
@@ -91,9 +91,159 @@ parser.add_argument("--resume_ckpt", action="store_true", help="resume training 
 parser.add_argument("--resume_jit", action="store_true", help="resume training from pretrained torchscript checkpoint")
 parser.add_argument("--smooth_dr", default=1e-6, type=float, help="constant added to dice denominator to avoid nan")
 parser.add_argument("--smooth_nr", default=0.0, type=float, help="constant added to dice numerator to avoid zero")
+parser.add_argument("--lower", default=1.0, type=float, help="lower percentile in ScaleIntensityRangePercentilesd")
+parser.add_argument("--upper", default=99.0, type=float, help="upper percentile in ScaleIntensityRangePercentilesd")
+parser.add_argument("--train_samples", default=10, type=int, help="number of samples per training image")
+parser.add_argument("--val_samples", default=5, type=int, help="number of samples per validation image")
+
+
+def main():
+    args = parser.parse_args()
+    args.amp = not args.noamp
+    args.logdir = "./runs/" + args.logdir
+    if args.distributed:
+        args.ngpus_per_node = torch.cuda.device_count()
+        print("Found total gpus", args.ngpus_per_node)
+        args.world_size = args.ngpus_per_node * args.world_size
+        mp.spawn(main_worker, nprocs=args.ngpus_per_node, args=(args,))
+    else:
+        main_worker(gpu=0, args=args)
+
+
+def main_worker(gpu, args):
+
+    if args.distributed:
+        torch.multiprocessing.set_start_method("fork", force=True)
+    np.set_printoptions(formatter={"float": "{: 0.3f}".format}, suppress=True)
+    args.gpu = gpu
+    if args.distributed:
+        args.rank = args.rank * args.ngpus_per_node + gpu
+        dist.init_process_group(
+            backend=args.dist_backend, init_method=args.dist_url, world_size=args.world_size, rank=args.rank
+        )
+    torch.cuda.set_device(args.gpu)
+    torch.backends.cudnn.benchmark = True
+    args.test_mode = False
+    loader = get_loader(args)
+    print(args.rank, " gpu", args.gpu)
+    if args.rank == 0:
+        print("Batch size is:", args.batch_size, "epochs", args.max_epochs)
+    inf_size = [args.roi_x, args.roi_y, args.roi_z]
+    pretrained_dir = args.pretrained_dir
+    if (args.model_name is None) or args.model_name == "unetr":
+        model = UNETR_2D(
+            in_channels=args.in_channels,
+            out_channels=args.out_channels,
+            img_size=(args.roi_x, args.roi_y),
+            feature_size=args.feature_size,
+            hidden_size=args.hidden_size,
+            mlp_dim=args.mlp_dim,
+            num_heads=args.num_heads,
+            pos_embed=args.pos_embed,
+            norm_name=args.norm_name,
+            conv_block=True,
+            res_block=True,
+            dropout_rate=args.dropout_rate,
+        )
+
+        if args.resume_ckpt:
+            model_dict = torch.load(os.path.join(pretrained_dir, args.pretrained_model_name))
+            model.load_state_dict(model_dict)
+            print("Use pretrained weights")
+
+        if args.resume_jit:
+            if not args.noamp:
+                print("Training from pre-trained checkpoint does not support AMP\nAMP is disabled.")
+                args.amp = args.noamp
+            model = torch.jit.load(os.path.join(pretrained_dir, args.pretrained_model_name))
+    else:
+        raise ValueError("Unsupported model " + str(args.model_name))
+
+    dice_loss = DiceCELoss(
+        to_onehot_y=True, softmax=True, squared_pred=True, smooth_nr=args.smooth_nr, smooth_dr=args.smooth_dr
+    )
+    post_label = AsDiscrete(to_onehot=True, n_classes=args.out_channels)
+    post_pred = AsDiscrete(argmax=True, to_onehot=True, n_classes=args.out_channels)
+    dice_acc = DiceMetric(include_background=True, reduction=MetricReduction.MEAN, get_not_nans=True)
+    model_inferer = partial(
+        sliding_window_inference,
+        roi_size=inf_size,
+        sw_batch_size=args.sw_batch_size,
+        predictor=model,
+        overlap=args.infer_overlap,
+    )
+
+    pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print("Total parameters count", pytorch_total_params)
+
+    best_acc = 0
+    start_epoch = 0
+
+    if args.checkpoint is not None:
+        checkpoint = torch.load(args.checkpoint, map_location="cpu")
+        from collections import OrderedDict
+
+        new_state_dict = OrderedDict()
+        for k, v in checkpoint["state_dict"].items():
+            new_state_dict[k.replace("backbone.", "")] = v
+        model.load_state_dict(new_state_dict, strict=False)
+        if "epoch" in checkpoint:
+            start_epoch = checkpoint["epoch"]
+        if "best_acc" in checkpoint:
+            best_acc = checkpoint["best_acc"]
+        print("=> loaded checkpoint '{}' (epoch {}) (bestacc {})".format(args.checkpoint, start_epoch, best_acc))
+
+    model.cuda(args.gpu)
+
+    if args.distributed:
+        torch.cuda.set_device(args.gpu)
+        if args.norm_name == "batch":
+            model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+        model.cuda(args.gpu)
+        model = torch.nn.parallel.DistributedDataParallel(
+            model, device_ids=[args.gpu], output_device=args.gpu, find_unused_parameters=True
+        )
+    if args.optim_name == "adam":
+        optimizer = torch.optim.Adam(model.parameters(), lr=args.optim_lr, weight_decay=args.reg_weight)
+    elif args.optim_name == "adamw":
+        optimizer = torch.optim.AdamW(model.parameters(), lr=args.optim_lr, weight_decay=args.reg_weight)
+    elif args.optim_name == "sgd":
+        optimizer = torch.optim.SGD(
+            model.parameters(), lr=args.optim_lr, momentum=args.momentum, nesterov=True, weight_decay=args.reg_weight
+        )
+    else:
+        raise ValueError("Unsupported Optimization Procedure: " + str(args.optim_name))
+
+    if args.lrschedule == "warmup_cosine":
+        scheduler = LinearWarmupCosineAnnealingLR(
+            optimizer, warmup_epochs=args.warmup_epochs, max_epochs=args.max_epochs
+        )
+    elif args.lrschedule == "cosine_anneal":
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.max_epochs)
+        if args.checkpoint is not None:
+            scheduler.step(epoch=start_epoch)
+    else:
+        scheduler = None
+    accuracy = run_training(
+        model=model,
+        train_loader=loader[0],
+        val_loader=loader[1],
+        optimizer=optimizer,
+        loss_func=dice_loss,
+        acc_func=dice_acc,
+        args=args,
+        model_inferer=model_inferer,
+        scheduler=scheduler,
+        start_epoch=start_epoch,
+        post_label=post_label,
+        post_pred=post_pred,
+    )
+    return accuracy
 
 
 if __name__ == "__main__":
+    # main()
+
     args = parser.parse_args()
     args.test_mode = False
     loader = get_loader(args)
@@ -108,15 +258,15 @@ if __name__ == "__main__":
         print(data.shape)
         print(target.shape)
 
-    # val_loader=loader[1]
-    # for idx, batch_data in enumerate(val_loader):
-    #     if isinstance(batch_data, list):
-    #         data, target = batch_data
-    #     else:
-    #         data, target = batch_data["image"], batch_data["label"]
-    #     print(idx)
-    #     print(data.shape)
-    #     print(target.shape)
+    val_loader=loader[1]
+    for idx, batch_data in enumerate(val_loader):
+        if isinstance(batch_data, list):
+            data, target = batch_data
+        else:
+            data, target = batch_data["image"], batch_data["label"]
+        print(idx)
+        print(data.shape)
+        print(target.shape)
 
     # Visualisation
     from data_utils.visualise_data import display_2d_tensor
