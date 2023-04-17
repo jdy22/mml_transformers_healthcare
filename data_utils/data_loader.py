@@ -77,15 +77,19 @@ def get_loader(args):
             transforms.Spacingd(
                 keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
             ),
-            transforms.ScaleIntensityRanged(
-                keys=["image"], a_min=args.a_min, a_max=args.a_max, b_min=args.b_min, b_max=args.b_max, clip=True
+            transforms.ScaleIntensityRangePercentilesd(
+                keys=["image"], lower=1, upper=99, b_min=args.b_min, b_max=args.b_max, clip=True
             ),
-            transforms.CropForegroundd(keys=["image", "label"], source_key="image"),
+            transforms.NormalizeIntensityd(keys=["image"]),
+            # transforms.ScaleIntensityRanged(
+            #     keys=["image"], a_min=args.a_min, a_max=args.a_max, b_min=args.b_min, b_max=args.b_max, clip=True
+            # ),
+            # transforms.CropForegroundd(keys=["image", "label"], source_key="image"),
             transforms.RandCropByLabelClassesd(
                 keys=["image", "label"],
                 label_key="label",
                 spatial_size=(args.roi_x, args.roi_y, args.roi_z),
-                ratios=[0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                ratios=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                 num_classes=16,
                 num_samples=2,
             ),
@@ -99,11 +103,11 @@ def get_loader(args):
             #     image_key="image",
             #     image_threshold=0,
             # ),
-            transforms.RandFlipd(keys=["image", "label"], prob=args.RandFlipd_prob, spatial_axis=0),
-            transforms.RandFlipd(keys=["image", "label"], prob=args.RandFlipd_prob, spatial_axis=1),
-            transforms.RandRotate90d(keys=["image", "label"], prob=args.RandRotate90d_prob, max_k=3),
-            transforms.RandScaleIntensityd(keys="image", factors=0.1, prob=args.RandScaleIntensityd_prob),
-            transforms.RandShiftIntensityd(keys="image", offsets=0.1, prob=args.RandShiftIntensityd_prob),
+            # transforms.RandFlipd(keys=["image", "label"], prob=args.RandFlipd_prob, spatial_axis=0),
+            # transforms.RandFlipd(keys=["image", "label"], prob=args.RandFlipd_prob, spatial_axis=1),
+            # transforms.RandRotate90d(keys=["image", "label"], prob=args.RandRotate90d_prob, max_k=3),
+            # transforms.RandScaleIntensityd(keys="image", factors=0.1, prob=args.RandScaleIntensityd_prob),
+            # transforms.RandShiftIntensityd(keys="image", offsets=0.1, prob=args.RandShiftIntensityd_prob),
             # transforms.SplitDimd(keys=["image", "label"], dim=-1, keepdim=False, list_output=True),
             transforms.SqueezeDimd(keys=["image", "label"], dim=-1),
             transforms.ToTensord(keys=["image", "label"]),
@@ -117,15 +121,19 @@ def get_loader(args):
             transforms.Spacingd(
                 keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
             ),
-            transforms.ScaleIntensityRanged(
-                keys=["image"], a_min=args.a_min, a_max=args.a_max, b_min=args.b_min, b_max=args.b_max, clip=True
+            transforms.ScaleIntensityRangePercentilesd(
+                keys=["image"], lower=1, upper=99, b_min=args.b_min, b_max=args.b_max, clip=True
             ),
-            transforms.CropForegroundd(keys=["image", "label"], source_key="image"),
+            transforms.NormalizeIntensityd(keys=["image"]),
+            # transforms.ScaleIntensityRanged(
+            #    keys=["image"], a_min=args.a_min, a_max=args.a_max, b_min=args.b_min, b_max=args.b_max, clip=True
+            # ),
+            # transforms.CropForegroundd(keys=["image", "label"], source_key="image"),
             transforms.RandCropByLabelClassesd(
                 keys=["image", "label"],
                 label_key="label",
                 spatial_size=(-1, -1, 1),
-                ratios=[0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                ratios=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                 num_classes=16,
                 num_samples=5,
             ),

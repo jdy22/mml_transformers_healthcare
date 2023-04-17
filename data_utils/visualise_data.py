@@ -143,16 +143,16 @@ def display_2d_tensor(img_tensor, lbls_tensor, x=None, y=None, window=None, leve
 
 
 if __name__ == "__main__":
-    image_filename = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/imagesTr/amos_0600.nii.gz"
+    image_filename = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/imagesVa/amos_0008.nii.gz"
     image = sitk.ReadImage(image_filename)
     # display_image(image, window=350, level=50) # For CT images
     # display_image(image, window=600, level=200) # For MRI images
     print(f"Image size: {image.GetSize()}")
     print(f"Image spacing: {image.GetSpacing()}")
 
-    labels_filename = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/labelsTr/amos_0600.nii.gz"
+    labels_filename = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/labelsVa/amos_0008.nii.gz"
     labels = sitk.ReadImage(labels_filename)
     # display_image(sitk.LabelToRGB(labels))
 
-    display_image_and_labels(image, sitk.LabelToRGB(labels), window=600, level=200)
+    display_image_and_labels(image, sitk.LabelToRGB(labels), window=350, level=50)
     plot_intensity_histogram(image)

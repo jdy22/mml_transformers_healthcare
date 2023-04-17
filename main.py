@@ -75,7 +75,7 @@ parser.add_argument("--b_min", default=0.0, type=float, help="b_min in ScaleInte
 parser.add_argument("--b_max", default=1.0, type=float, help="b_max in ScaleIntensityRanged")
 parser.add_argument("--space_x", default=1.0, type=float, help="spacing in x direction")
 parser.add_argument("--space_y", default=1.0, type=float, help="spacing in y direction")
-parser.add_argument("--space_z", default=2.0, type=float, help="spacing in z direction")
+parser.add_argument("--space_z", default=1.0, type=float, help="spacing in z direction")
 parser.add_argument("--roi_x", default=128, type=int, help="roi size in x direction")
 parser.add_argument("--roi_y", default=128, type=int, help="roi size in y direction")
 parser.add_argument("--roi_z", default=1, type=int, help="roi size in z direction")
@@ -108,15 +108,15 @@ if __name__ == "__main__":
         print(data.shape)
         print(target.shape)
 
-    val_loader=loader[1]
-    for idx, batch_data in enumerate(val_loader):
-        if isinstance(batch_data, list):
-            data, target = batch_data
-        else:
-            data, target = batch_data["image"], batch_data["label"]
-        print(idx)
-        print(data.shape)
-        print(target.shape)
+    # val_loader=loader[1]
+    # for idx, batch_data in enumerate(val_loader):
+    #     if isinstance(batch_data, list):
+    #         data, target = batch_data
+    #     else:
+    #         data, target = batch_data["image"], batch_data["label"]
+    #     print(idx)
+    #     print(data.shape)
+    #     print(target.shape)
 
     # Visualisation
     from data_utils.visualise_data import display_2d_tensor
