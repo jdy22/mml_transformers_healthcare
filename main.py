@@ -242,34 +242,34 @@ def main_worker(gpu, args):
 
 
 if __name__ == "__main__":
-    # main()
+    main()
 
-    args = parser.parse_args()
-    args.test_mode = False
-    loader = get_loader(args)
+    # args = parser.parse_args()
+    # args.test_mode = False
+    # loader = get_loader(args)
 
-    train_loader=loader[0]
-    for idx, batch_data in enumerate(train_loader):
-        if isinstance(batch_data, list):
-            data, target = batch_data
-        else:
-            data, target = batch_data["image"], batch_data["label"]
-        print(idx)
-        print(data.shape)
-        print(target.shape)
+    # train_loader=loader[0]
+    # for idx, batch_data in enumerate(train_loader):
+    #     if isinstance(batch_data, list):
+    #         data, target = batch_data
+    #     else:
+    #         data, target = batch_data["image"], batch_data["label"]
+    #     print(idx)
+    #     print(data.shape)
+    #     print(target.shape)
 
-    val_loader=loader[1]
-    for idx, batch_data in enumerate(val_loader):
-        if isinstance(batch_data, list):
-            data, target = batch_data
-        else:
-            data, target = batch_data["image"], batch_data["label"]
-        print(idx)
-        print(data.shape)
-        print(target.shape)
+    # val_loader=loader[1]
+    # for idx, batch_data in enumerate(val_loader):
+    #     if isinstance(batch_data, list):
+    #         data, target = batch_data
+    #     else:
+    #         data, target = batch_data["image"], batch_data["label"]
+    #     print(idx)
+    #     print(data.shape)
+    #     print(target.shape)
 
-    # Visualisation
-    from data_utils.visualise_data import display_2d_tensor
-    image = data[0, 0, :, :]
-    labels = target[0, 0, :, :]
-    display_2d_tensor(image, labels)
+    # # Visualisation
+    # from data_utils.visualise_data import display_2d_tensor
+    # image = data[0, 0, :, :]
+    # labels = target[0, 0, :, :]
+    # display_2d_tensor(image, labels)
