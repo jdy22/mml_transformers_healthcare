@@ -162,8 +162,8 @@ def main_worker(gpu, args):
     dice_loss = DiceCELoss(
         to_onehot_y=True, softmax=True, squared_pred=True, smooth_nr=args.smooth_nr, smooth_dr=args.smooth_dr
     )
-    post_label = AsDiscrete(to_onehot=True, n_classes=args.out_channels)
-    post_pred = AsDiscrete(argmax=True, to_onehot=True, n_classes=args.out_channels)
+    post_label = AsDiscrete(to_onehot=args.out_channels)
+    post_pred = AsDiscrete(argmax=True, to_onehot=args.out_channels)
     dice_acc = DiceMetric(include_background=True, reduction=MetricReduction.MEAN, get_not_nans=True)
     model_inferer = partial(
         sliding_window_inference,
