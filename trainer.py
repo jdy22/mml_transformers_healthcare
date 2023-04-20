@@ -95,6 +95,7 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
     model.eval()
     start_time = time.time()
     with torch.no_grad():
+        accs = []
         for idx, batch_data in enumerate(loader):
             if isinstance(batch_data, list):
                 data, target = batch_data
@@ -122,6 +123,8 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
             else:
                 acc_list = acc.detach().cpu().numpy()
                 avg_acc = np.mean([np.nanmean(l) for l in acc_list])
+            
+            accs.append(avg_acc)
 
             if args.rank == 0:
                 print(
@@ -131,7 +134,7 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
                     "time {:.2f}s".format(time.time() - start_time),
                 )
             start_time = time.time()
-    return avg_acc
+    return sum(accs)/len(accs)
 
 
 def save_checkpoint(model, epoch, args, filename="model.pt", best_acc=0, optimizer=None, scheduler=None):
