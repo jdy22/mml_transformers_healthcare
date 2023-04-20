@@ -42,15 +42,15 @@ parser.add_argument(
     "--pretrained_model_name", default="UNETR_model_best_acc.pth", type=str, help="pretrained model name"
 )
 parser.add_argument("--save_checkpoint", action="store_true", help="save checkpoint during training")
-parser.add_argument("--max_epochs", default=50, type=int, help="max number of training epochs")
-parser.add_argument("--batch_size", default=5, type=int, help="number of batch size")
+parser.add_argument("--max_epochs", default=1, type=int, help="max number of training epochs")
+parser.add_argument("--batch_size", default=1, type=int, help="number of batch size")
 parser.add_argument("--sw_batch_size", default=1, type=int, help="number of sliding window batch size")
 parser.add_argument("--optim_lr", default=1e-4, type=float, help="optimization learning rate")
 parser.add_argument("--optim_name", default="adamw", type=str, help="optimization algorithm")
 parser.add_argument("--reg_weight", default=1e-5, type=float, help="regularization weight")
 parser.add_argument("--momentum", default=0.99, type=float, help="momentum")
 parser.add_argument("--noamp", action="store_true", help="do NOT use amp for training")
-parser.add_argument("--val_every", default=10, type=int, help="validation frequency")
+parser.add_argument("--val_every", default=1, type=int, help="validation frequency")
 parser.add_argument("--distributed", action="store_true", help="start distributed training")
 parser.add_argument("--world_size", default=1, type=int, help="number of nodes for distributed training")
 parser.add_argument("--rank", default=0, type=int, help="node rank for distributed training")
@@ -93,8 +93,8 @@ parser.add_argument("--smooth_dr", default=1e-6, type=float, help="constant adde
 parser.add_argument("--smooth_nr", default=0.0, type=float, help="constant added to dice numerator to avoid zero")
 parser.add_argument("--lower", default=1.0, type=float, help="lower percentile in ScaleIntensityRangePercentilesd")
 parser.add_argument("--upper", default=99.0, type=float, help="upper percentile in ScaleIntensityRangePercentilesd")
-parser.add_argument("--train_samples", default=20, type=int, help="number of samples per training image")
-parser.add_argument("--val_samples", default=10, type=int, help="number of samples per validation image")
+parser.add_argument("--train_samples", default=1, type=int, help="number of samples per training image")
+parser.add_argument("--val_samples", default=1, type=int, help="number of samples per validation image")
 
 
 def main():
