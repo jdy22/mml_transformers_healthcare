@@ -166,12 +166,12 @@ def run_training(
 ):
     writer = None
     if args.logdir is not None and args.rank == 0:
-        # Write out args to txt file
-        with open(args.logdir + "/args.txt", "w") as file:
-            json.dump(args.__dict__, file, indent=2)
         writer = SummaryWriter(log_dir=args.logdir)
         if args.rank == 0:
             print("Writing Tensorboard logs to ", args.logdir)
+        # Write out args to txt file
+        with open(args.logdir + "/args.txt", "w") as file:
+            json.dump(args.__dict__, file, indent=2)
     scaler = None
     if args.amp:
         scaler = GradScaler()
