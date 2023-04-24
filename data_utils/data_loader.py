@@ -153,7 +153,7 @@ def get_loader(args):
             num_workers=args.workers,
             sampler=test_sampler,
             pin_memory=True,
-            persistent_workers=False,
+            # persistent_workers=False,
         )
         loader = test_loader
     else:
@@ -172,7 +172,7 @@ def get_loader(args):
             num_workers=args.workers,
             sampler=train_sampler,
             pin_memory=True,
-            persistent_workers=False,
+            # persistent_workers=False,
         )
         val_files = load_decathlon_datalist(datalist_json, True, "validation", base_dir=data_dir)
         val_ds = data.Dataset(data=val_files, transform=val_transform)
@@ -184,7 +184,7 @@ def get_loader(args):
             num_workers=args.workers,
             sampler=val_sampler,
             pin_memory=True,
-            persistent_workers=False,
+            # persistent_workers=False,
         )
         loader = [train_loader, val_loader]
 
