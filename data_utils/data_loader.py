@@ -152,7 +152,7 @@ def get_loader(args):
             shuffle=False,
             num_workers=args.workers,
             sampler=test_sampler,
-            pin_memory=False,
+            pin_memory=True,
             persistent_workers=True,
         )
         loader = test_loader
@@ -171,7 +171,7 @@ def get_loader(args):
             shuffle=(train_sampler is None),
             num_workers=args.workers,
             sampler=train_sampler,
-            pin_memory=False,
+            pin_memory=True,
             persistent_workers=True,
         )
         val_files = load_decathlon_datalist(datalist_json, True, "validation", base_dir=data_dir)
@@ -183,7 +183,7 @@ def get_loader(args):
             shuffle=False,
             num_workers=args.workers,
             sampler=val_sampler,
-            pin_memory=False,
+            pin_memory=True,
             persistent_workers=True,
         )
         loader = [train_loader, val_loader]
