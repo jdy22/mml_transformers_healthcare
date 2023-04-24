@@ -61,6 +61,8 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args):
         else:
             data, target = batch_data["image"], batch_data["label"]
         data, target = data.cuda(args.rank), target.cuda(args.rank)
+        load_time = time.time() - start_time
+        inter_time = time.time()
         for param in model.parameters():
             param.grad = None
         with autocast(enabled=args.amp):
@@ -85,6 +87,8 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args):
                 "Epoch {}/{} {}/{}".format(epoch, args.max_epochs, idx, len(loader)),
                 "loss: {:.4f}".format(run_loss.avg),
                 "time {:.2f}s".format(time.time() - start_time),
+                "loader time {:.2f}s".format(load_time),
+                "optimisation time {:.2f}s".format(time.time() - inter_time),
             )
         start_time = time.time()
     for param in model.parameters():
