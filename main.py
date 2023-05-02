@@ -93,8 +93,8 @@ parser.add_argument("--smooth_dr", default=1e-6, type=float, help="constant adde
 parser.add_argument("--smooth_nr", default=0.0, type=float, help="constant added to dice numerator to avoid zero")
 parser.add_argument("--lower", default=1.0, type=float, help="lower percentile in ScaleIntensityRangePercentilesd")
 parser.add_argument("--upper", default=99.0, type=float, help="upper percentile in ScaleIntensityRangePercentilesd")
-parser.add_argument("--train_samples", default=40, type=int, help="number of samples per training image")
-parser.add_argument("--val_samples", default=10, type=int, help="number of samples per validation image")
+parser.add_argument("--train_samples", default=1, type=int, help="number of samples per training image")
+parser.add_argument("--val_samples", default=1, type=int, help="number of samples per validation image")
 
 
 def main():
@@ -242,25 +242,25 @@ def main_worker(gpu, args):
 
 
 if __name__ == "__main__":
-    import resource
-    rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
-    resource.setrlimit(resource.RLIMIT_NOFILE, (2048, rlimit[1]))
+    # import resource
+    # rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
+    # resource.setrlimit(resource.RLIMIT_NOFILE, (2048, rlimit[1]))
 
-    main()
+    # main()
     
-    # args = parser.parse_args()
-    # args.test_mode = False
-    # loader = get_loader(args)
+    args = parser.parse_args()
+    args.test_mode = False
+    loader = get_loader(args)
 
-    # train_loader=loader[0]
-    # for idx, batch_data in enumerate(train_loader):
-    #     if isinstance(batch_data, list):
-    #         data, target = batch_data
-    #     else:
-    #         data, target = batch_data["image"], batch_data["label"]
-    #     print(idx)
-    #     print(data.shape)
-    #     print(target.shape)
+    train_loader=loader[0]
+    for idx, batch_data in enumerate(train_loader):
+        if isinstance(batch_data, list):
+            data, target = batch_data
+        else:
+            data, target = batch_data["image"], batch_data["label"]
+        print(idx)
+        print(data.shape)
+        print(target.shape)
 
     # val_loader=loader[1]
     # for idx, batch_data in enumerate(val_loader):
