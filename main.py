@@ -32,12 +32,12 @@ from monai.utils.enums import MetricReduction
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument("--checkpoint", default=None, help="start training from saved checkpoint")
-parser.add_argument("--logdir", default="run2", type=str, help="directory to save the tensorboard logs")
+parser.add_argument("--logdir", default="run3", type=str, help="directory to save the tensorboard logs")
 parser.add_argument(
     "--pretrained_dir", default="./pretrained_models/", type=str, help="pretrained checkpoint directory"
 )
-parser.add_argument("--data_dir", default="./test_data/", type=str, help="dataset directory")
-parser.add_argument("--json_list", default="dataset_test.json", type=str, help="dataset json file")
+parser.add_argument("--data_dir", default="./amos22/", type=str, help="dataset directory")
+parser.add_argument("--json_list", default="dataset.json", type=str, help="dataset json file")
 parser.add_argument(
     "--pretrained_model_name", default="UNETR_model_best_acc.pth", type=str, help="pretrained model name"
 )
@@ -93,8 +93,8 @@ parser.add_argument("--smooth_dr", default=1e-6, type=float, help="constant adde
 parser.add_argument("--smooth_nr", default=0.0, type=float, help="constant added to dice numerator to avoid zero")
 parser.add_argument("--lower", default=1.0, type=float, help="lower percentile in ScaleIntensityRangePercentilesd")
 parser.add_argument("--upper", default=99.0, type=float, help="upper percentile in ScaleIntensityRangePercentilesd")
-parser.add_argument("--train_samples", default=1, type=int, help="number of samples per training image")
-parser.add_argument("--val_samples", default=1, type=int, help="number of samples per validation image")
+parser.add_argument("--train_samples", default=40, type=int, help="number of samples per training image")
+parser.add_argument("--val_samples", default=10, type=int, help="number of samples per validation image")
 
 
 def main():
@@ -246,21 +246,24 @@ if __name__ == "__main__":
     rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
     resource.setrlimit(resource.RLIMIT_NOFILE, (2048, rlimit[1]))
 
-    # main()
+    main()
     
-    args = parser.parse_args()
-    args.test_mode = False
-    loader = get_loader(args)
+    # args = parser.parse_args()
+    # args.test_mode = False
+    # loader = get_loader(args)
 
-    train_loader=loader[0]
-    for idx, batch_data in enumerate(train_loader):
-        if isinstance(batch_data, list):
-            data, target = batch_data
-        else:
-            data, target = batch_data["image"], batch_data["label"]
-        print(idx)
-        print(data.shape)
-        print(target.shape)
+    # train_loader=loader[0]
+    # for idx, batch_data in enumerate(train_loader):
+    #     if isinstance(batch_data, list):
+    #         data, target = batch_data
+    #     else:
+    #         data, target = batch_data["image"], batch_data["label"]
+    #     print(idx)
+    #     print(data.shape)
+    #     print(target.shape)
+
+    # # Visualisation
+    # from data_utils.visualise_data import display_2d_tensor
 
     # val_loader=loader[1]
     # for idx, batch_data in enumerate(val_loader):
@@ -272,8 +275,7 @@ if __name__ == "__main__":
     #     print(data.shape)
     #     print(target.shape)
 
-    # # Visualisation
-    # from data_utils.visualise_data import display_2d_tensor
-    # image = data[0, 0, :, :]
-    # labels = target[0, 0, :, :]
-    # display_2d_tensor(image, labels)
+    #     # Visualisation
+    #     image = data[0, 0, :, :]
+    #     labels = target[0, 0, :, :]
+    #     display_2d_tensor(image, labels)

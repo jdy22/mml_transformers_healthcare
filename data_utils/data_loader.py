@@ -88,8 +88,7 @@ def get_loader(args):
             transforms.RandCropByLabelClassesd(
                 keys=["image", "label"],
                 label_key="label",
-                # spatial_size=(args.roi_x, args.roi_y, args.roi_z),
-                spatial_size=(-1, -1, 1),
+                spatial_size=(args.roi_x, args.roi_y, args.roi_z),
                 ratios=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                 num_classes=16,
                 num_samples=args.train_samples,
@@ -169,8 +168,7 @@ def get_loader(args):
         train_loader = data.DataLoader(
             train_ds,
             batch_size=args.batch_size,
-            # shuffle=(train_sampler is None),
-            shuffle = False,
+            shuffle=(train_sampler is None),
             num_workers=args.workers,
             sampler=train_sampler,
             pin_memory=True,
