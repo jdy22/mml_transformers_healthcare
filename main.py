@@ -36,8 +36,8 @@ parser.add_argument("--logdir", default="run2", type=str, help="directory to sav
 parser.add_argument(
     "--pretrained_dir", default="./pretrained_models/", type=str, help="pretrained checkpoint directory"
 )
-parser.add_argument("--data_dir", default="./amos22/", type=str, help="dataset directory")
-parser.add_argument("--json_list", default="dataset.json", type=str, help="dataset json file")
+parser.add_argument("--data_dir", default="./test_data/", type=str, help="dataset directory")
+parser.add_argument("--json_list", default="dataset_test.json", type=str, help="dataset json file")
 parser.add_argument(
     "--pretrained_model_name", default="UNETR_model_best_acc.pth", type=str, help="pretrained model name"
 )
@@ -252,18 +252,8 @@ if __name__ == "__main__":
     args.test_mode = False
     loader = get_loader(args)
 
-    # train_loader=loader[0]
-    # for idx, batch_data in enumerate(train_loader):
-    #     if isinstance(batch_data, list):
-    #         data, target = batch_data
-    #     else:
-    #         data, target = batch_data["image"], batch_data["label"]
-    #     print(idx)
-    #     print(data.shape)
-    #     print(target.shape)
-
-    val_loader=loader[1]
-    for idx, batch_data in enumerate(val_loader):
+    train_loader=loader[0]
+    for idx, batch_data in enumerate(train_loader):
         if isinstance(batch_data, list):
             data, target = batch_data
         else:
@@ -271,6 +261,16 @@ if __name__ == "__main__":
         print(idx)
         print(data.shape)
         print(target.shape)
+
+    # val_loader=loader[1]
+    # for idx, batch_data in enumerate(val_loader):
+    #     if isinstance(batch_data, list):
+    #         data, target = batch_data
+    #     else:
+    #         data, target = batch_data["image"], batch_data["label"]
+    #     print(idx)
+    #     print(data.shape)
+    #     print(target.shape)
 
     # # Visualisation
     # from data_utils.visualise_data import display_2d_tensor
