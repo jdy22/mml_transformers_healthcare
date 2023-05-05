@@ -65,6 +65,7 @@ parser.add_argument("--lower", default=1.0, type=float, help="lower percentile i
 parser.add_argument("--upper", default=99.0, type=float, help="upper percentile in ScaleIntensityRangePercentilesd")
 parser.add_argument("--train_samples", default=40, type=int, help="number of samples per training image")
 parser.add_argument("--val_samples", default=20, type=int, help="number of samples per validation image")
+parser.add_argument("--nsd_threshold", default=3, type=int, help="class_thresholds in compute_surface_dice")
 
 
 def calculate_score(metric, args, model, loader):
@@ -128,6 +129,7 @@ def main():
 
     with torch.no_grad():
         mean_dice_mri, mean_dice_per_organ_mri = calculate_score("dice", args, model, loader_mri)
+        print(mean_dice_per_organ_mri)
 
 
 if __name__ == "__main__":
