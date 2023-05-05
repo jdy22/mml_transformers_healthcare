@@ -117,4 +117,8 @@ def main():
 
 
 if __name__ == "__main__":
+    import resource
+    rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
+    resource.setrlimit(resource.RLIMIT_NOFILE, (2048, rlimit[1]))
+    
     main()
