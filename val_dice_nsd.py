@@ -106,6 +106,8 @@ def main():
             val_outputs = torch.softmax(val_outputs, 1).cpu().numpy()
             val_outputs = np.argmax(val_outputs, axis=1).astype(np.uint8)
             val_labels = val_labels.cpu().numpy()[:, 0, :, :]
+            print(val_outputs.shape)
+            print(val_labels.shape)
             dice_list_sub = []
             for i in range(1, 16):
                 organ_Dice = dice(val_outputs[0] == i, val_labels[0] == i)
@@ -120,5 +122,5 @@ if __name__ == "__main__":
     import resource
     rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
     resource.setrlimit(resource.RLIMIT_NOFILE, (2048, rlimit[1]))
-    
+
     main()
