@@ -142,7 +142,7 @@ def get_loader(args):
             transforms.ToTensord(keys=["image", "label"]),
         ]
     )
-    print(args.test_mode)
+    
     if args.test_mode:
         test_files_ct = load_decathlon_datalist(datalist_json, True, "internal-validation-ct", base_dir=data_dir)
         test_ds_ct = data.Dataset(data=test_files_ct, transform=val_transform)
