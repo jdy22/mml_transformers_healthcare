@@ -77,10 +77,8 @@ def calculate_score(metric, args, model, loader):
         # print("Inference on case {}".format(img_name))
         val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap)
         val_outputs = torch.softmax(val_outputs, 1).cpu().numpy()
-        val_outputs = np.argmax(val_outputs, axis=1).astype(np.uint8)
-        print(val_labels.shape)
-        val_labels = val_labels.cpu().numpy()[:, 0, :, :]
-        print(val_labels.shape)
+        val_outputs = np.argmax(val_outputs, axis=1, keepdims=True).astype(np.uint8)
+        val_labels = val_labels.cpu().numpy()
         scores_list_sub = []
         for organ in range(1, 16):
             if metric == "dice":
