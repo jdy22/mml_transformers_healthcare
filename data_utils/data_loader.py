@@ -144,19 +144,31 @@ def get_loader(args):
     )
 
     if args.test_mode:
-        test_files = load_decathlon_datalist(datalist_json, True, "validation", base_dir=data_dir)
-        test_ds = data.Dataset(data=test_files, transform=val_transform)
-        test_sampler = Sampler(test_ds, shuffle=False) if args.distributed else None
-        test_loader = data.DataLoader(
-            test_ds,
+        test_files_ct = load_decathlon_datalist(datalist_json, True, "internal-validation-ct", base_dir=data_dir)
+        test_ds_ct = data.Dataset(data=test_files_ct, transform=val_transform)
+        test_sampler_ct = Sampler(test_ds_ct, shuffle=False) if args.distributed else None
+        test_loader_ct = data.DataLoader(
+            test_ds_ct,
             batch_size=1,
             shuffle=False,
             num_workers=args.workers,
-            sampler=test_sampler,
+            sampler=test_sampler_ct,
             pin_memory=True,
             persistent_workers=True,
         )
-        loader = test_loader
+        test_files_mri = load_decathlon_datalist(datalist_json, True, "internal-validation-mri", base_dir=data_dir)
+        test_ds_mri = data.Dataset(data=test_files_mri, transform=val_transform)
+        test_sampler_mri = Sampler(test_ds_mri, shuffle=False) if args.distributed else None
+        test_loader_mri = data.DataLoader(
+            test_ds_mri,
+            batch_size=1,
+            shuffle=False,
+            num_workers=args.workers,
+            sampler=test_sampler_mri,
+            pin_memory=True,
+            persistent_workers=True,
+        )
+        loader = [test_loader_ct, test_loader_mri]
     else:
         datalist = load_decathlon_datalist(datalist_json, True, "training", base_dir=data_dir)
         if args.use_normal_dataset:
