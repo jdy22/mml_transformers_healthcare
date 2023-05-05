@@ -82,11 +82,14 @@ def calculate_score(metric, args, model, loader):
         val_labels = val_labels.cpu().numpy()
         scores_list_sub = []
         for organ in range(1, 16):
-            # TODO: add code to skip if organ does not exist in true labels
+            # Skip if organ does not exist in true labels
+            if np.sum(np.sum(np.sum(np.sum(val_labels == organ)))) == 0:
+                continue
             if metric == "dice":
                 score = dice(val_outputs == organ, val_labels == organ)
             elif metric == "nsd":
                 score = compute_surface_dice(torch.Tensor(val_outputs == organ), torch.Tensor(val_labels == organ), [args.nsd_threshold])
+                print(score)
             scores_per_organ.setdefault(organ, []).append(score)
             scores_list_sub.append(score)
         mean_score = np.mean(scores_list_sub)
@@ -94,6 +97,7 @@ def calculate_score(metric, args, model, loader):
         scores_overall.append(mean_score)
     mean_score_overall = np.mean(scores_overall)
     print("Overall mean {} score: {}".format(metric, mean_score_overall))
+    # TODO: add code to compute average scores per organ
 
     return mean_score_overall, scores_per_organ
 
