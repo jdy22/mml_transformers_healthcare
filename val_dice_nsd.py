@@ -86,7 +86,7 @@ def calculate_score(metric, args, model, loader):
             if metric == "dice":
                 score = dice(val_outputs == organ, val_labels == organ)
             elif metric == "nsd":
-                score = compute_surface_dice(val_outputs == organ, val_labels == organ, list(args.nsd_threshold))
+                score = compute_surface_dice(val_outputs == organ, val_labels == organ, [args.nsd_threshold])
             scores_per_organ.setdefault(organ, []).append(score)
             scores_list_sub.append(score)
         mean_score = np.mean(scores_list_sub)
