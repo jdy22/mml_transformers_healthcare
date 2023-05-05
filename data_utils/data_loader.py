@@ -68,7 +68,8 @@ class Sampler(torch.utils.data.Sampler):
 
 def get_loader(args):
     data_dir = args.data_dir
-    datalist_json = os.path.join(data_dir, args.json_list)
+    # datalist_json = os.path.join(data_dir, args.json_list)
+    datalist_json = args.json_list
     train_transform = transforms.Compose(
         [
             transforms.LoadImaged(keys=["image", "label"]),
@@ -174,7 +175,7 @@ def get_loader(args):
             pin_memory=True,
             persistent_workers=True,
         )
-        val_files = load_decathlon_datalist(datalist_json, True, "validation", base_dir=data_dir)
+        val_files = load_decathlon_datalist(datalist_json, True, "internal-validation", base_dir=data_dir)
         val_ds = data.Dataset(data=val_files, transform=val_transform)
         val_sampler = Sampler(val_ds, shuffle=False) if args.distributed else None
         val_loader = data.DataLoader(
