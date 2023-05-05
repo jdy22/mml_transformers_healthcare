@@ -19,6 +19,7 @@ from trainer import dice
 from data_utils.data_loader import get_loader
 
 from monai.inferers import sliding_window_inference
+from monai.metrics import compute_surface_dice
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument(
@@ -66,10 +67,39 @@ parser.add_argument("--train_samples", default=40, type=int, help="number of sam
 parser.add_argument("--val_samples", default=20, type=int, help="number of samples per validation image")
 
 
+def calculate_score(metric, args, model, loader):
+    # Options for metric: "dice" or "nsd"
+    scores_overall = []
+    scores_per_organ = {}
+    for _, batch in enumerate(loader):
+        val_inputs, val_labels = (batch["image"].cuda(), batch["label"].cuda())
+        # img_name = batch["image_meta_dict"]["filename_or_obj"][0].split("/")[-1]
+        # print("Inference on case {}".format(img_name))
+        val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap)
+        val_outputs = torch.softmax(val_outputs, 1).cpu().numpy()
+        val_outputs = np.argmax(val_outputs, axis=1).astype(np.uint8)
+        val_labels = val_labels.cpu().numpy()[:, 0, :, :]
+        scores_list_sub = []
+        for organ in range(1, 16):
+            if metric == "dice":
+                score = dice(val_outputs == organ, val_labels == organ)
+            scores_per_organ.setdefault(organ, []).append(score)
+            scores_list_sub.append(score)
+        mean_score = np.mean(scores_list_sub)
+        print("Mean {} score: {}".format(metric, mean_score))
+        scores_overall.append(mean_score)
+    mean_score_overall = np.mean(scores_overall)
+    print("Overall mean {} score: {}".format(metric, mean_score_overall))
+
+    return mean_score_overall, scores_per_organ
+
+
 def main():
     args = parser.parse_args()
     args.test_mode = True
     val_loader = get_loader(args)
+    loader_ct = val_loader[0]
+    loader_mri = val_loader[1]
     pretrained_dir = args.pretrained_dir
     model_name = args.pretrained_model_name
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -97,25 +127,7 @@ def main():
     model.to(device)
 
     with torch.no_grad():
-        dice_list_case = []
-        for i, batch in enumerate(val_loader[1]):
-            val_inputs, val_labels = (batch["image"].cuda(), batch["label"].cuda())
-            # img_name = batch["image_meta_dict"]["filename_or_obj"][0].split("/")[-1]
-            # print("Inference on case {}".format(img_name))
-            val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap)
-            val_outputs = torch.softmax(val_outputs, 1).cpu().numpy()
-            val_outputs = np.argmax(val_outputs, axis=1).astype(np.uint8)
-            val_labels = val_labels.cpu().numpy()[:, 0, :, :]
-            print(val_outputs.shape)
-            print(val_labels.shape)
-            dice_list_sub = []
-            for i in range(1, 16):
-                organ_Dice = dice(val_outputs[0] == i, val_labels[0] == i)
-                dice_list_sub.append(organ_Dice)
-            mean_dice = np.mean(dice_list_sub)
-            print("Mean Organ Dice: {}".format(mean_dice))
-            dice_list_case.append(mean_dice)
-        print("Overall Mean Dice: {}".format(np.mean(dice_list_case)))
+        mean_dice_mri, mean_dice_per_organ_mri = calculate_score("dice", args, model, loader_mri)
 
 
 if __name__ == "__main__":
