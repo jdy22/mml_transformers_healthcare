@@ -82,8 +82,11 @@ def calculate_score(metric, args, model, loader):
         val_labels = val_labels.cpu().numpy()
         scores_list_sub = []
         for organ in range(1, 16):
+            # TODO: add code to skip if organ does not exist in true labels
             if metric == "dice":
                 score = dice(val_outputs == organ, val_labels == organ)
+            elif metric == "nsd":
+                score = compute_surface_dice(val_outputs == organ, val_labels == organ, list(args.nsd_threshold))
             scores_per_organ.setdefault(organ, []).append(score)
             scores_list_sub.append(score)
         mean_score = np.mean(scores_list_sub)
@@ -128,8 +131,8 @@ def main():
     model.to(device)
 
     with torch.no_grad():
-        mean_dice_mri, mean_dice_per_organ_mri = calculate_score("dice", args, model, loader_mri)
-        print(mean_dice_per_organ_mri)
+        # mean_dice_mri, mean_dice_per_organ_mri = calculate_score("dice", args, model, loader_mri)
+        mean_nsd_mri, mean_nsd_per_organ_mri = calculate_score("nsd", args, model, loader_mri)
 
 
 if __name__ == "__main__":
