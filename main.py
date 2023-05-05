@@ -32,7 +32,7 @@ from monai.utils.enums import MetricReduction
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument("--checkpoint", default=None, help="start training from saved checkpoint")
-parser.add_argument("--logdir", default="run3", type=str, help="directory to save the tensorboard logs")
+parser.add_argument("--logdir", default="run4", type=str, help="directory to save the tensorboard logs")
 parser.add_argument(
     "--pretrained_dir", default="./pretrained_models/", type=str, help="pretrained checkpoint directory"
 )
@@ -76,8 +76,8 @@ parser.add_argument("--b_max", default=1.0, type=float, help="b_max in ScaleInte
 parser.add_argument("--space_x", default=1.5, type=float, help="spacing in x direction")
 parser.add_argument("--space_y", default=1.5, type=float, help="spacing in y direction")
 parser.add_argument("--space_z", default=2.0, type=float, help="spacing in z direction")
-parser.add_argument("--roi_x", default=80, type=int, help="roi size in x direction")
-parser.add_argument("--roi_y", default=80, type=int, help="roi size in y direction")
+parser.add_argument("--roi_x", default=112, type=int, help="roi size in x direction")
+parser.add_argument("--roi_y", default=112, type=int, help="roi size in y direction")
 parser.add_argument("--roi_z", default=1, type=int, help="roi size in z direction")
 parser.add_argument("--dropout_rate", default=0.0, type=float, help="dropout rate")
 # parser.add_argument("--RandFlipd_prob", default=0.2, type=float, help="RandFlipd aug probability")
