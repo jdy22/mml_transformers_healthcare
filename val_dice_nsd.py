@@ -89,7 +89,11 @@ def calculate_score(metric, args, model, loader):
                 if metric == "dice":
                     score = dice(y_pred, y_true)
                 elif metric == "nsd":
-                    score = compute_surface_dice(torch.Tensor(val_outputs == organ), torch.Tensor(val_labels == organ), [args.nsd_threshold])
+                    y_pred = np.expand_dims(y_pred, 0)
+                    y_true = np.expand_dims(y_true, 0)
+                    score = compute_surface_dice(torch.Tensor(y_pred), torch.Tensor(y_true), [args.nsd_threshold])
+                    if np.isposinf(score) or np.isnan(score):
+                        continue
                 scores_per_organ.setdefault(organ, []).append(score)
         print("{}/{} validation images processed".format(idx+1, len(loader)))
     # Calculate mean score per organ and overall
@@ -136,13 +140,13 @@ def main():
     model.to(device)
 
     with torch.no_grad():
-        mean_dice_ct, mean_dice_per_organ_ct = calculate_score("dice", args, model, loader_ct)
+        # mean_dice_ct, mean_dice_per_organ_ct = calculate_score("dice", args, model, loader_ct)
         # mean_nsd_ct, mean_nsd_per_organ_ct = calculate_score("nsd", args, model, loader_ct)
         
         # mean_dice_mri, mean_dice_per_organ_mri = calculate_score("dice", args, model, loader_mri)
-        # mean_nsd_mri, mean_nsd_per_organ_mri = calculate_score("nsd", args, model, loader_mri)
+        mean_nsd_mri, mean_nsd_per_organ_mri = calculate_score("nsd", args, model, loader_mri)
 
-        print(mean_dice_per_organ_ct)
+        print(mean_nsd_per_organ_mri)
 
 
 if __name__ == "__main__":
