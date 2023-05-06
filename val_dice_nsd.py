@@ -140,13 +140,15 @@ def main():
     model.to(device)
 
     with torch.no_grad():
-        # mean_dice_ct, mean_dice_per_organ_ct = calculate_score("dice", args, model, loader_ct)
+        mean_dice_ct, mean_dice_per_organ_ct = calculate_score("dice", args, model, loader_ct)
         mean_nsd_ct, mean_nsd_per_organ_ct = calculate_score("nsd", args, model, loader_ct)
         
-        # mean_dice_mri, mean_dice_per_organ_mri = calculate_score("dice", args, model, loader_mri)
-        # mean_nsd_mri, mean_nsd_per_organ_mri = calculate_score("nsd", args, model, loader_mri)
+        mean_dice_mri, mean_dice_per_organ_mri = calculate_score("dice", args, model, loader_mri)
+        mean_nsd_mri, mean_nsd_per_organ_mri = calculate_score("nsd", args, model, loader_mri)
 
-        print(mean_nsd_per_organ_ct)
+        print("Final scores:")
+        print(f"CT: mDice = {mean_dice_ct}, mNSD = {mean_nsd_ct}")
+        print(f"MRI: mDice = {mean_dice_mri}, mNSD = {mean_nsd_mri}")
 
 
 if __name__ == "__main__":
