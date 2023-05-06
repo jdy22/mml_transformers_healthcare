@@ -23,7 +23,7 @@ from monai.metrics import compute_surface_dice
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument(
-    "--pretrained_dir", default="./runs/run3/", type=str, help="pretrained checkpoint directory"
+    "--pretrained_dir", default="./runs/run4/", type=str, help="pretrained checkpoint directory"
 )
 parser.add_argument("--data_dir", default="./amos22/", type=str, help="dataset directory")
 parser.add_argument("--json_list", default="dataset_internal_val.json", type=str, help="dataset json file")
@@ -49,8 +49,8 @@ parser.add_argument("--b_max", default=1.0, type=float, help="b_max in ScaleInte
 parser.add_argument("--space_x", default=1.5, type=float, help="spacing in x direction")
 parser.add_argument("--space_y", default=1.5, type=float, help="spacing in y direction")
 parser.add_argument("--space_z", default=2.0, type=float, help="spacing in z direction")
-parser.add_argument("--roi_x", default=80, type=int, help="roi size in x direction")
-parser.add_argument("--roi_y", default=80, type=int, help="roi size in y direction")
+parser.add_argument("--roi_x", default=112, type=int, help="roi size in x direction")
+parser.add_argument("--roi_y", default=112, type=int, help="roi size in y direction")
 parser.add_argument("--roi_z", default=1, type=int, help="roi size in z direction")
 parser.add_argument("--dropout_rate", default=0.0, type=float, help="dropout rate")
 parser.add_argument("--distributed", action="store_true", help="start distributed training")
@@ -135,8 +135,8 @@ def main():
     model.to(device)
 
     with torch.no_grad():
-        # mean_dice_mri, mean_dice_per_organ_mri = calculate_score("dice", args, model, loader_mri)
-        mean_nsd_mri, mean_nsd_per_organ_mri = calculate_score("nsd", args, model, loader_mri)
+        mean_dice_mri, mean_dice_per_organ_mri = calculate_score("dice", args, model, loader_mri)
+        # mean_nsd_mri, mean_nsd_per_organ_mri = calculate_score("nsd", args, model, loader_mri)
 
 
 if __name__ == "__main__":
