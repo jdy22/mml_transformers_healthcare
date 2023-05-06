@@ -91,7 +91,7 @@ def calculate_score(metric, args, model, loader):
                 elif metric == "nsd":
                     y_pred = np.expand_dims(y_pred, 0)
                     y_true = np.expand_dims(y_true, 0)
-                    score = compute_surface_dice(torch.Tensor(y_pred), torch.Tensor(y_true), [args.nsd_threshold])
+                    score = compute_surface_dice(torch.Tensor(y_pred), torch.Tensor(y_true), [args.nsd_threshold])[0, 0]
                     if np.isposinf(score) or np.isnan(score):
                         continue
                 scores_per_organ.setdefault(organ, []).append(score)
