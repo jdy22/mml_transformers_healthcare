@@ -71,6 +71,7 @@ parser.add_argument("--nsd_threshold", default=3, type=int, help="class_threshol
 def calculate_score(metric, args, model, loader):
     # Options for metric: "dice" or "nsd"
     scores_per_organ = {}
+    nan_inf_count = 0
     for idx, batch in enumerate(loader):
         val_inputs, val_labels = (batch["image"].cuda(), batch["label"].cuda())
         # img_name = batch["image_meta_dict"]["filename_or_obj"][0].split("/")[-1]
@@ -93,6 +94,7 @@ def calculate_score(metric, args, model, loader):
                     y_true = np.expand_dims(y_true, 0)
                     score = compute_surface_dice(torch.Tensor(y_pred), torch.Tensor(y_true), [args.nsd_threshold])[0, 0]
                     if np.isposinf(score) or np.isnan(score):
+                        nan_inf_count += 1
                         continue
                 scores_per_organ.setdefault(organ, []).append(score)
         print("{}/{} validation images processed".format(idx+1, len(loader)))
@@ -103,6 +105,7 @@ def calculate_score(metric, args, model, loader):
         total_score += scores_per_organ[organ]
     mean_score_overall = total_score/len(scores_per_organ)
     print("Overall mean {} score: {}".format(metric, mean_score_overall))
+    print("Number of nan and inf values = {}".format(nan_inf_count))
 
     return mean_score_overall, scores_per_organ
 
@@ -149,6 +152,11 @@ def main():
         print("Final scores:")
         print(f"CT: mDice = {mean_dice_ct}, mNSD = {mean_nsd_ct}")
         print(f"MRI: mDice = {mean_dice_mri}, mNSD = {mean_nsd_mri}")
+
+        print(mean_dice_per_organ_ct)
+        print(mean_nsd_per_organ_ct)
+        print(mean_dice_per_organ_mri)
+        print(mean_nsd_per_organ_mri)
 
 
 if __name__ == "__main__":

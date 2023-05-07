@@ -1,7 +1,7 @@
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 import matplotlib.pyplot as plt
 
-logfile = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/Code/individual_project/runs/run3/events.out.tfevents.1683282863.gpu30.doc.ic.ac.uk"
+logfile = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/Code/individual_project/runs/run5/events.out.tfevents.1683284049.gpu30.doc.ic.ac.uk"
 
 event_acc = EventAccumulator(logfile)
 event_acc.Reload()
@@ -19,6 +19,9 @@ val_acc = []
 for item in event_acc.Scalars("val_acc"):
     val_epochs.append(item.step)
     val_acc.append(item.value)
+
+max_acc = max(val_acc)
+print(f"Maximum validation accuracy = {max_acc} at epoch number {val_epochs[val_acc.index(max_acc)]+1}")
 
 # Plot
 fig, ((ax1), (ax2)) = plt.subplots(1, 2, figsize=(8, 3.5))
