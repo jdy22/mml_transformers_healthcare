@@ -23,7 +23,7 @@ from monai.metrics import compute_surface_dice
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument(
-    "--pretrained_dir", default="./runs/run4/", type=str, help="pretrained checkpoint directory"
+    "--pretrained_dir", default="./runs/run5/", type=str, help="pretrained checkpoint directory"
 )
 parser.add_argument("--data_dir", default="./amos22/", type=str, help="dataset directory")
 parser.add_argument("--json_list", default="dataset_internal_val.json", type=str, help="dataset json file")
@@ -61,7 +61,7 @@ parser.add_argument("--workers", default=8, type=int, help="number of workers")
 # parser.add_argument("--RandShiftIntensityd_prob", default=0.1, type=float, help="RandShiftIntensityd aug probability")
 parser.add_argument("--pos_embed", default="perceptron", type=str, help="type of position embedding")
 parser.add_argument("--norm_name", default="instance", type=str, help="normalization layer type in decoder")
-parser.add_argument("--lower", default=1.0, type=float, help="lower percentile in ScaleIntensityRangePercentilesd")
+parser.add_argument("--lower", default=30.0, type=float, help="lower percentile in ScaleIntensityRangePercentilesd")
 parser.add_argument("--upper", default=99.0, type=float, help="upper percentile in ScaleIntensityRangePercentilesd")
 parser.add_argument("--train_samples", default=40, type=int, help="number of samples per training image")
 parser.add_argument("--val_samples", default=20, type=int, help="number of samples per validation image")
