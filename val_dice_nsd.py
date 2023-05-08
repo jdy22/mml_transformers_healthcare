@@ -65,8 +65,25 @@ parser.add_argument("--lower", default=30.0, type=float, help="lower percentile 
 parser.add_argument("--upper", default=99.0, type=float, help="upper percentile in ScaleIntensityRangePercentilesd")
 parser.add_argument("--train_samples", default=40, type=int, help="number of samples per training image")
 parser.add_argument("--val_samples", default=20, type=int, help="number of samples per validation image")
-parser.add_argument("--nsd_threshold", default=3, type=int, help="class_thresholds in compute_surface_dice")
+# parser.add_argument("--nsd_threshold", default=3, type=int, help="class_thresholds in compute_surface_dice")
 
+nsd_thresholds_mm = {
+    1: 3,
+    2: 3,
+    3: 3, 
+    4: 2,
+    5: 3,
+    6: 5,
+    7: 5,
+    8: 2,
+    9: 2,
+    10: 5,
+    11: 2,
+    12: 2,
+    13: 7,
+    14: 2,
+    15: 4,
+}
 
 def calculate_score(metric, args, model, loader):
     # Options for metric: "dice" or "nsd"
@@ -92,7 +109,7 @@ def calculate_score(metric, args, model, loader):
                 elif metric == "nsd":
                     y_pred = np.expand_dims(y_pred, 0)
                     y_true = np.expand_dims(y_true, 0)
-                    score = compute_surface_dice(torch.Tensor(y_pred), torch.Tensor(y_true), [args.nsd_threshold])[0, 0]
+                    score = compute_surface_dice(torch.Tensor(y_pred), torch.Tensor(y_true), [nsd_thresholds_mm[organ]/args.space_x])[0, 0]
                     if np.isposinf(score) or np.isnan(score):
                         nan_inf_count += 1
                         continue
