@@ -32,7 +32,7 @@ from monai.utils.enums import MetricReduction
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument("--checkpoint", default=None, help="start training from saved checkpoint")
-parser.add_argument("--logdir", default="run5", type=str, help="directory to save the tensorboard logs")
+parser.add_argument("--logdir", default="run6", type=str, help="directory to save the tensorboard logs")
 parser.add_argument(
     "--pretrained_dir", default="./pretrained_models/", type=str, help="pretrained checkpoint directory"
 )
@@ -95,6 +95,7 @@ parser.add_argument("--lower", default=30.0, type=float, help="lower percentile 
 parser.add_argument("--upper", default=99.0, type=float, help="upper percentile in ScaleIntensityRangePercentilesd")
 parser.add_argument("--train_samples", default=40, type=int, help="number of samples per training image")
 parser.add_argument("--val_samples", default=20, type=int, help="number of samples per validation image")
+parser.add_argument("--train_sampling", default="unbalanced", type=str, help="sampling distribution of organs during training")
 
 
 def main():

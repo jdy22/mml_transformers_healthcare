@@ -70,6 +70,12 @@ def get_loader(args):
     data_dir = args.data_dir
     # datalist_json = os.path.join(data_dir, args.json_list)
     datalist_json = args.json_list
+
+    if args.train_sampling == "uniform":
+        train_crop_ratios = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    elif args.train_sampling == "unbalanced":
+        train_crop_ratios = [1, 1, 1, 1, 2, 2, 1, 2, 1, 2, 2, 2, 2, 2, 2, 2]
+
     train_transform = transforms.Compose(
         [
             transforms.LoadImaged(keys=["image", "label"]),
@@ -90,7 +96,7 @@ def get_loader(args):
                 keys=["image", "label"],
                 label_key="label",
                 spatial_size=(args.roi_x, args.roi_y, args.roi_z),
-                ratios=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                ratios=train_crop_ratios,
                 num_classes=16,
                 num_samples=args.train_samples,
             ),
