@@ -32,7 +32,7 @@ from monai.utils.enums import MetricReduction
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument("--checkpoint", default=None, help="start training from saved checkpoint")
-parser.add_argument("--logdir", default="run7", type=str, help="directory to save the tensorboard logs")
+parser.add_argument("--logdir", default="run8", type=str, help="directory to save the tensorboard logs")
 parser.add_argument(
     "--pretrained_dir", default="./pretrained_models/", type=str, help="pretrained checkpoint directory"
 )
@@ -84,9 +84,9 @@ parser.add_argument("--dropout_rate", default=0.0, type=float, help="dropout rat
 # parser.add_argument("--RandRotate90d_prob", default=0.2, type=float, help="RandRotate90d aug probability")
 # parser.add_argument("--RandScaleIntensityd_prob", default=0.1, type=float, help="RandScaleIntensityd aug probability")
 # parser.add_argument("--RandShiftIntensityd_prob", default=0.1, type=float, help="RandShiftIntensityd aug probability")
-parser.add_argument("--infer_overlap", default=0.5, type=float, help="sliding window inference overlap")
+parser.add_argument("--infer_overlap", default=0.7, type=float, help="sliding window inference overlap")
 parser.add_argument("--lrschedule", default="warmup_cosine", type=str, help="type of learning rate scheduler")
-parser.add_argument("--warmup_epochs", default=200, type=int, help="number of warmup epochs")
+parser.add_argument("--warmup_epochs", default=50, type=int, help="number of warmup epochs")
 parser.add_argument("--resume_ckpt", action="store_true", help="resume training from pretrained checkpoint")
 parser.add_argument("--resume_jit", action="store_true", help="resume training from pretrained torchscript checkpoint")
 parser.add_argument("--smooth_dr", default=1e-6, type=float, help="constant added to dice denominator to avoid nan")
