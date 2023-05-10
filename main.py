@@ -31,15 +31,15 @@ from monai.transforms import Activations, AsDiscrete, Compose
 from monai.utils.enums import MetricReduction
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
-parser.add_argument("--checkpoint", default=None, help="start training from saved checkpoint")
-parser.add_argument("--logdir", default="run8", type=str, help="directory to save the tensorboard logs")
+parser.add_argument("--checkpoint", default="./runs/run3/model.pt", help="start training from saved checkpoint")
+parser.add_argument("--logdir", default="run3b", type=str, help="directory to save the tensorboard logs")
 parser.add_argument(
-    "--pretrained_dir", default="./pretrained_models/", type=str, help="pretrained checkpoint directory"
+    "--pretrained_dir", default="./runs/run3/", type=str, help="pretrained checkpoint directory"
 )
 parser.add_argument("--data_dir", default="./amos22/", type=str, help="dataset directory")
 parser.add_argument("--json_list", default="dataset_internal_val.json", type=str, help="dataset json file")
 parser.add_argument(
-    "--pretrained_model_name", default="UNETR_model_best_acc.pth", type=str, help="pretrained model name"
+    "--pretrained_model_name", default="model.pt", type=str, help="pretrained model name"
 )
 parser.add_argument("--save_checkpoint", action="store_false", help="save checkpoint during training")
 parser.add_argument("--max_epochs", default=1000, type=int, help="max number of training epochs")
@@ -76,22 +76,22 @@ parser.add_argument("--b_max", default=1.0, type=float, help="b_max in ScaleInte
 parser.add_argument("--space_x", default=1.5, type=float, help="spacing in x direction")
 parser.add_argument("--space_y", default=1.5, type=float, help="spacing in y direction")
 parser.add_argument("--space_z", default=2.0, type=float, help="spacing in z direction")
-parser.add_argument("--roi_x", default=112, type=int, help="roi size in x direction")
-parser.add_argument("--roi_y", default=112, type=int, help="roi size in y direction")
+parser.add_argument("--roi_x", default=80, type=int, help="roi size in x direction")
+parser.add_argument("--roi_y", default=80, type=int, help="roi size in y direction")
 parser.add_argument("--roi_z", default=1, type=int, help="roi size in z direction")
 parser.add_argument("--dropout_rate", default=0.0, type=float, help="dropout rate")
 # parser.add_argument("--RandFlipd_prob", default=0.2, type=float, help="RandFlipd aug probability")
 # parser.add_argument("--RandRotate90d_prob", default=0.2, type=float, help="RandRotate90d aug probability")
 # parser.add_argument("--RandScaleIntensityd_prob", default=0.1, type=float, help="RandScaleIntensityd aug probability")
 # parser.add_argument("--RandShiftIntensityd_prob", default=0.1, type=float, help="RandShiftIntensityd aug probability")
-parser.add_argument("--infer_overlap", default=0.7, type=float, help="sliding window inference overlap")
+parser.add_argument("--infer_overlap", default=0.5, type=float, help="sliding window inference overlap")
 parser.add_argument("--lrschedule", default="warmup_cosine", type=str, help="type of learning rate scheduler")
 parser.add_argument("--warmup_epochs", default=50, type=int, help="number of warmup epochs")
-parser.add_argument("--resume_ckpt", action="store_true", help="resume training from pretrained checkpoint")
+parser.add_argument("--resume_ckpt", action="store_false", help="resume training from pretrained checkpoint")
 parser.add_argument("--resume_jit", action="store_true", help="resume training from pretrained torchscript checkpoint")
 parser.add_argument("--smooth_dr", default=1e-6, type=float, help="constant added to dice denominator to avoid nan")
 parser.add_argument("--smooth_nr", default=0.0, type=float, help="constant added to dice numerator to avoid zero")
-parser.add_argument("--lower", default=30.0, type=float, help="lower percentile in ScaleIntensityRangePercentilesd")
+parser.add_argument("--lower", default=1.0, type=float, help="lower percentile in ScaleIntensityRangePercentilesd")
 parser.add_argument("--upper", default=99.0, type=float, help="upper percentile in ScaleIntensityRangePercentilesd")
 parser.add_argument("--train_samples", default=40, type=int, help="number of samples per training image")
 parser.add_argument("--val_samples", default=20, type=int, help="number of samples per validation image")
@@ -149,7 +149,7 @@ def main_worker(gpu, args):
 
         if args.resume_ckpt:
             model_dict = torch.load(os.path.join(pretrained_dir, args.pretrained_model_name))
-            model.load_state_dict(model_dict)
+            model.load_state_dict(model_dict["state_dict"])
             print("Use pretrained weights")
 
         if args.resume_jit:
