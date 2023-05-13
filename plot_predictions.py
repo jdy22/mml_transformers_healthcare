@@ -67,7 +67,7 @@ parser.add_argument("--val_samples", default=20, type=int, help="number of sampl
 parser.add_argument("--train_sampling", default="uniform", type=str, help="sampling distribution of organs during training")
 
 
-def visualise_predictions(image_index, args, model, loader, modality):
+def visualise_predictions(args, model, loader, modality, image_index, num_samples):
     for idx, batch in enumerate(loader):
         if idx == image_index:
             val_inputs, val_labels = (batch["image"].cuda(), batch["label"].cuda())
@@ -75,10 +75,11 @@ def visualise_predictions(image_index, args, model, loader, modality):
             val_outputs = torch.softmax(val_outputs, 1).cpu().numpy()
             val_outputs = np.argmax(val_outputs, axis=1, keepdims=True).astype(np.uint8)
             val_labels = val_labels.cpu().numpy()
-            x = val_inputs[0, 0, :, :]
-            y_pred = val_outputs[0, 0, :, :]
-            y_true = val_labels[0, 0, :, :]
-            plot_save_predictions(x, y_pred, y_true, image_index, args, modality)
+            for sample in range(num_samples):
+                x = val_inputs[sample, 0, :, :]
+                y_pred = val_outputs[sample, 0, :, :]
+                y_true = val_labels[sample, 0, :, :]
+                plot_save_predictions(x, y_pred, y_true, image_index, sample, args, modality)
         
 
 def main():
@@ -114,7 +115,7 @@ def main():
     model.to(device)
 
     with torch.no_grad():
-        visualise_predictions(0, args, model, loader_mri, modality="MRI")
+        visualise_predictions(args, model, loader_mri, modality="MRI", image_index=0, num_samples=5)
 
 
 if __name__ == "__main__":

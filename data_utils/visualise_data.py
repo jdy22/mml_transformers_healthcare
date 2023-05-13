@@ -142,7 +142,7 @@ def display_2d_tensor(img_tensor, lbls_tensor, x=None, y=None, window=None, leve
     plt.show()
 
 
-def plot_save_predictions(x, y_pred, y_true, image_index, args, modality):
+def plot_save_predictions(x, y_pred, y_true, image_index, sample_no, args, modality):
     width = x.shape[0]
     height = x.shape[1]
 
@@ -162,7 +162,7 @@ def plot_save_predictions(x, y_pred, y_true, image_index, args, modality):
     ax2.imshow(np.transpose(x), cmap='gray', clim=(low, high), extent=(0, width, height, 0))
     ax2.imshow(np.transpose(y_pred), cmap='viridis', clim=(low_lbls, high_lbls), alpha=0.5, extent=(0, width, height, 0))
 
-    plt.savefig(fname=(args.pretrained_dir + modality + "_prediction_" + str(image_index) + ".png"))
+    plt.savefig(fname=(args.pretrained_dir + modality + "_prediction_" + str(image_index) + "_" + str(sample_no) + ".png"))
 
 
 if __name__ == "__main__":
