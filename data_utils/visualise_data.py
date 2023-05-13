@@ -142,6 +142,29 @@ def display_2d_tensor(img_tensor, lbls_tensor, x=None, y=None, window=None, leve
     plt.show()
 
 
+def plot_save_predictions(x, y_pred, y_true, image_index, args, modality):
+    width = x.shape[0]
+    height = x.shape[1]
+
+    window = np.max(x) - np.min(x)
+    level = window / 2 + np.min(x)
+    low, high = wl_to_lh(window,level)
+
+    window_lbls = np.max(y_true) - np.min(y_true)
+    level_lbls = window_lbls / 2 + np.min(y_true)
+    low_lbls, high_lbls = wl_to_lh(window_lbls,level_lbls)
+
+    fig, ((ax1), (ax2)) = plt.subplots(2, 1, figsize=(3.5, 8))
+
+    ax1.imshow(np.transpose(x), cmap='gray', clim=(low, high), extent=(0, width, height, 0))
+    ax1.imshow(np.transpose(y_true), cmap='gray', clim=(low_lbls, high_lbls), alpha=0.5, extent=(0, width, height, 0))
+
+    ax2.imshow(np.transpose(x), cmap='gray', clim=(low, high), extent=(0, width, height, 0))
+    ax2.imshow(np.transpose(y_pred), cmap='gray', clim=(low_lbls, high_lbls), alpha=0.5, extent=(0, width, height, 0))
+
+    plt.savefig(fname=(args.pretrained_dir + modality + "_prediction_" + str(image_index) + ".png"))
+
+
 if __name__ == "__main__":
     image_filename = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/imagesVa/amos_0008.nii.gz"
     image = sitk.ReadImage(image_filename)
