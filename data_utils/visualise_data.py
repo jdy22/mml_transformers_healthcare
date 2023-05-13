@@ -154,13 +154,13 @@ def plot_save_predictions(x, y_pred, y_true, image_index, args, modality):
     level_lbls = window_lbls / 2 + np.min(y_true)
     low_lbls, high_lbls = wl_to_lh(window_lbls,level_lbls)
 
-    fig, ((ax1), (ax2)) = plt.subplots(2, 1, figsize=(3.5, 8))
+    fig, ((ax1), (ax2)) = plt.subplots(1, 2, figsize=(8, 3.5))
 
     ax1.imshow(np.transpose(x), cmap='gray', clim=(low, high), extent=(0, width, height, 0))
-    ax1.imshow(np.transpose(y_true), cmap='gray', clim=(low_lbls, high_lbls), alpha=0.5, extent=(0, width, height, 0))
+    ax1.imshow(np.transpose(y_true), cmap='viridis', clim=(low_lbls, high_lbls), alpha=0.5, extent=(0, width, height, 0))
 
     ax2.imshow(np.transpose(x), cmap='gray', clim=(low, high), extent=(0, width, height, 0))
-    ax2.imshow(np.transpose(y_pred), cmap='gray', clim=(low_lbls, high_lbls), alpha=0.5, extent=(0, width, height, 0))
+    ax2.imshow(np.transpose(y_pred), cmap='viridis', clim=(low_lbls, high_lbls), alpha=0.5, extent=(0, width, height, 0))
 
     plt.savefig(fname=(args.pretrained_dir + modality + "_prediction_" + str(image_index) + ".png"))
 
