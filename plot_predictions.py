@@ -75,9 +75,9 @@ def visualise_predictions(image_index, args, model, loader, modality):
             val_outputs = torch.softmax(val_outputs, 1).cpu().numpy()
             val_outputs = np.argmax(val_outputs, axis=1, keepdims=True).astype(np.uint8)
             val_labels = val_labels.cpu().numpy()
-            x = val_inputs[0]
-            y_pred = val_outputs[0]
-            y_true = val_labels[0]
+            x = val_inputs[0, 0, :, :]
+            y_pred = val_outputs[0, 0, :, :]
+            y_true = val_labels[0, 0, :, :]
             plot_save_predictions(x, y_pred, y_true, image_index, args, modality)
         
 
