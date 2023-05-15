@@ -23,7 +23,7 @@ from monai.metrics import compute_surface_dice
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument(
-    "--pretrained_dir", default="./runs/run5/", type=str, help="pretrained checkpoint directory"
+    "--pretrained_dir", default="./runs/run5b/", type=str, help="pretrained checkpoint directory"
 )
 parser.add_argument("--data_dir", default="./amos22/", type=str, help="dataset directory")
 parser.add_argument("--json_list", default="dataset_internal_val.json", type=str, help="dataset json file")
