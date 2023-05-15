@@ -23,7 +23,7 @@ from monai.metrics import compute_surface_dice
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument(
-    "--pretrained_dir", default="./runs/run7b/", type=str, help="pretrained checkpoint directory"
+    "--pretrained_dir", default="./runs/run8b/", type=str, help="pretrained checkpoint directory"
 )
 parser.add_argument("--data_dir", default="./amos22/", type=str, help="dataset directory")
 parser.add_argument("--json_list", default="dataset_internal_val.json", type=str, help="dataset json file")
@@ -36,7 +36,7 @@ parser.add_argument(
 parser.add_argument("--mlp_dim", default=3072, type=int, help="mlp dimention in ViT encoder")
 parser.add_argument("--hidden_size", default=768, type=int, help="hidden size dimention in ViT encoder")
 parser.add_argument("--feature_size", default=16, type=int, help="feature size dimention")
-parser.add_argument("--infer_overlap", default=0.5, type=float, help="sliding window inference overlap")
+parser.add_argument("--infer_overlap", default=0.7, type=float, help="sliding window inference overlap")
 parser.add_argument("--in_channels", default=1, type=int, help="number of input channels")
 parser.add_argument("--out_channels", default=16, type=int, help="number of output channels")
 parser.add_argument("--num_heads", default=12, type=int, help="number of attention heads in ViT encoder")
