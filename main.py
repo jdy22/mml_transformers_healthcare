@@ -32,7 +32,7 @@ from monai.utils.enums import MetricReduction
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument("--checkpoint", default=None, help="start training from saved checkpoint")
-parser.add_argument("--logdir", default="run10", type=str, help="directory to save the tensorboard logs")
+parser.add_argument("--logdir", default="run11", type=str, help="directory to save the tensorboard logs")
 parser.add_argument(
     "--pretrained_dir", default="./runs/run8/", type=str, help="pretrained checkpoint directory"
 )
@@ -43,7 +43,7 @@ parser.add_argument(
 )
 parser.add_argument("--save_checkpoint", action="store_false", help="save checkpoint during training")
 parser.add_argument("--max_epochs", default=1000, type=int, help="max number of training epochs")
-parser.add_argument("--batch_size", default=1, type=int, help="number of batch size")
+parser.add_argument("--batch_size", default=2, type=int, help="number of batch size")
 parser.add_argument("--sw_batch_size", default=1, type=int, help="number of sliding window batch size")
 parser.add_argument("--optim_lr", default=1e-4, type=float, help="optimization learning rate")
 parser.add_argument("--optim_name", default="adamw", type=str, help="optimization algorithm")
@@ -76,8 +76,8 @@ parser.add_argument("--b_max", default=1.0, type=float, help="b_max in ScaleInte
 parser.add_argument("--space_x", default=1.5, type=float, help="spacing in x direction")
 parser.add_argument("--space_y", default=1.5, type=float, help="spacing in y direction")
 parser.add_argument("--space_z", default=2.0, type=float, help="spacing in z direction")
-parser.add_argument("--roi_x", default=96, type=int, help="roi size in x direction")
-parser.add_argument("--roi_y", default=96, type=int, help="roi size in y direction")
+parser.add_argument("--roi_x", default=112, type=int, help="roi size in x direction")
+parser.add_argument("--roi_y", default=112, type=int, help="roi size in y direction")
 parser.add_argument("--roi_z", default=1, type=int, help="roi size in z direction")
 parser.add_argument("--dropout_rate", default=0.0, type=float, help="dropout rate")
 # parser.add_argument("--RandFlipd_prob", default=0.2, type=float, help="RandFlipd aug probability")
