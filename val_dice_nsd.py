@@ -17,6 +17,7 @@ import torch
 from networks.unetr_2d import UNETR_2D
 from trainer import dice
 from data_utils.data_loader import get_loader
+from data_utils.data_loader_2 import get_loader_2
 
 from monai.inferers import sliding_window_inference
 from monai.metrics import compute_surface_dice
@@ -66,6 +67,8 @@ parser.add_argument("--upper", default=99.0, type=float, help="upper percentile 
 parser.add_argument("--train_samples", default=40, type=int, help="number of samples per training image")
 parser.add_argument("--val_samples", default=20, type=int, help="number of samples per validation image")
 parser.add_argument("--train_sampling", default="uniform", type=str, help="sampling distribution of organs during training")
+parser.add_argument("--preprocessing", default=1, type=int, help="preprocessing option")
+
 
 nsd_thresholds_mm = {
     1: 3,
@@ -130,7 +133,10 @@ def calculate_score(metric, args, model, loader):
 def main():
     args = parser.parse_args()
     args.test_mode = True
-    val_loader = get_loader(args)
+    if args.preprocessing == 1:
+        val_loader = get_loader(args)
+    elif args.preprocessing == 2:
+        val_loader = get_loader_2(args)
     loader_ct = val_loader[0]
     loader_mri = val_loader[1]
     pretrained_dir = args.pretrained_dir
