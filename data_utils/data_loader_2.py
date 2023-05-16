@@ -31,50 +31,104 @@ def get_loader_2(args):
     elif args.train_sampling == "unbalanced":
         train_crop_ratios = [1, 1, 1, 1, 2, 2, 1, 2, 1, 2, 2, 2, 2, 2, 2, 2]
 
-    train_transform_ct = transforms.Compose(
-        [
-            transforms.LoadImaged(keys=["image", "label"]),
-            transforms.AddChanneld(keys=["image", "label"]),
-            transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
-            transforms.Spacingd(
-                keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
-            ),
-            transforms.ThresholdIntensityd(keys=["image"], threshold=-991, above=True, cval=-991),
-            transforms.ThresholdIntensityd(keys=["image"], threshold=362, above=False, cval=362),
-            transforms.NormalizeIntensityd(keys=["image"], subtrahend=50, divisor=141),
-            transforms.RandCropByLabelClassesd(
-                keys=["image", "label"],
-                label_key="label",
-                spatial_size=(args.roi_x, args.roi_y, args.roi_z),
-                ratios=train_crop_ratios,
-                num_classes=16,
-                num_samples=args.train_samples,
-            ),
-            transforms.SqueezeDimd(keys=["image", "label"], dim=-1),
-            transforms.ToTensord(keys=["image", "label"]),
-        ]
-    )
-    train_transform_mri = transforms.Compose(
-        [
-            transforms.LoadImaged(keys=["image", "label"]),
-            transforms.AddChanneld(keys=["image", "label"]),
-            transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
-            transforms.Spacingd(
-                keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
-            ),
-            transforms.NormalizeIntensityd(keys=["image"]),
-            transforms.RandCropByLabelClassesd(
-                keys=["image", "label"],
-                label_key="label",
-                spatial_size=(args.roi_x, args.roi_y, args.roi_z),
-                ratios=train_crop_ratios,
-                num_classes=16,
-                num_samples=args.train_samples,
-            ),
-            transforms.SqueezeDimd(keys=["image", "label"], dim=-1),
-            transforms.ToTensord(keys=["image", "label"]),
-        ]
-    )
+    if args.data_augmentation:
+        train_transform_ct = transforms.Compose(
+            [
+                transforms.LoadImaged(keys=["image", "label"]),
+                transforms.AddChanneld(keys=["image", "label"]),
+                transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
+                transforms.Spacingd(
+                    keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
+                ),
+                transforms.ThresholdIntensityd(keys=["image"], threshold=-991, above=True, cval=-991),
+                transforms.ThresholdIntensityd(keys=["image"], threshold=362, above=False, cval=362),
+                transforms.NormalizeIntensityd(keys=["image"], subtrahend=50, divisor=141),
+                transforms.RandCropByLabelClassesd(
+                    keys=["image", "label"],
+                    label_key="label",
+                    spatial_size=(args.roi_x, args.roi_y, args.roi_z),
+                    ratios=train_crop_ratios,
+                    num_classes=16,
+                    num_samples=args.train_samples,
+                ),
+                transforms.RandRotated(keys=["image", "label"], range_x=0.52, prob=0.2, mode=("bilinear", "nearest")),
+                transforms.RandScaleIntensityd(keys=["image"], factors=(-0.3, 0.4), prob=0.2),
+                transforms.RandGaussianNoised(keys=["image"], prob=0.1, mean=0.0, std=0.1),
+                transforms.RandAdjustContrastd(keys=["image"], prob=0.15, gamma=(0.75, 1.5)),
+                transforms.SqueezeDimd(keys=["image", "label"], dim=-1),
+                transforms.ToTensord(keys=["image", "label"]),
+            ]
+        )
+        train_transform_mri = transforms.Compose(
+            [
+                transforms.LoadImaged(keys=["image", "label"]),
+                transforms.AddChanneld(keys=["image", "label"]),
+                transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
+                transforms.Spacingd(
+                    keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
+                ),
+                transforms.NormalizeIntensityd(keys=["image"]),
+                transforms.RandCropByLabelClassesd(
+                    keys=["image", "label"],
+                    label_key="label",
+                    spatial_size=(args.roi_x, args.roi_y, args.roi_z),
+                    ratios=train_crop_ratios,
+                    num_classes=16,
+                    num_samples=args.train_samples,
+                ),
+                transforms.RandRotated(keys=["image", "label"], range_x=0.52, prob=0.2, mode=("bilinear", "nearest")),
+                transforms.RandScaleIntensityd(keys=["image"], factors=(-0.3, 0.4), prob=0.2),
+                transforms.RandGaussianNoised(keys=["image"], prob=0.1, mean=0.0, std=0.1),
+                transforms.RandAdjustContrastd(keys=["image"], prob=0.15, gamma=(0.75, 1.5)),
+                transforms.SqueezeDimd(keys=["image", "label"], dim=-1),
+                transforms.ToTensord(keys=["image", "label"]),
+            ]
+        )
+    else:
+        train_transform_ct = transforms.Compose(
+            [
+                transforms.LoadImaged(keys=["image", "label"]),
+                transforms.AddChanneld(keys=["image", "label"]),
+                transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
+                transforms.Spacingd(
+                    keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
+                ),
+                transforms.ThresholdIntensityd(keys=["image"], threshold=-991, above=True, cval=-991),
+                transforms.ThresholdIntensityd(keys=["image"], threshold=362, above=False, cval=362),
+                transforms.NormalizeIntensityd(keys=["image"], subtrahend=50, divisor=141),
+                transforms.RandCropByLabelClassesd(
+                    keys=["image", "label"],
+                    label_key="label",
+                    spatial_size=(args.roi_x, args.roi_y, args.roi_z),
+                    ratios=train_crop_ratios,
+                    num_classes=16,
+                    num_samples=args.train_samples,
+                ),
+                transforms.SqueezeDimd(keys=["image", "label"], dim=-1),
+                transforms.ToTensord(keys=["image", "label"]),
+            ]
+        )
+        train_transform_mri = transforms.Compose(
+            [
+                transforms.LoadImaged(keys=["image", "label"]),
+                transforms.AddChanneld(keys=["image", "label"]),
+                transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
+                transforms.Spacingd(
+                    keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
+                ),
+                transforms.NormalizeIntensityd(keys=["image"]),
+                transforms.RandCropByLabelClassesd(
+                    keys=["image", "label"],
+                    label_key="label",
+                    spatial_size=(args.roi_x, args.roi_y, args.roi_z),
+                    ratios=train_crop_ratios,
+                    num_classes=16,
+                    num_samples=args.train_samples,
+                ),
+                transforms.SqueezeDimd(keys=["image", "label"], dim=-1),
+                transforms.ToTensord(keys=["image", "label"]),
+            ]
+        )
     val_transform_ct = transforms.Compose(
         [
             transforms.LoadImaged(keys=["image", "label"]),
