@@ -85,7 +85,7 @@ def get_loader(args):
                 keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
             ),
             transforms.ScaleIntensityRangePercentilesd(
-                keys=["image"], lower=args.lower, upper=args.upper, b_min=args.b_min, b_max=args.b_max, clip=True
+                keys=["image"], lower=args.lower, upper=args.upper, b_min=0, b_max=1, clip=True
             ),
             transforms.NormalizeIntensityd(keys=["image"]),
             # transforms.ScaleIntensityRanged(
@@ -129,7 +129,7 @@ def get_loader(args):
                 keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
             ),
             transforms.ScaleIntensityRangePercentilesd(
-                keys=["image"], lower=args.lower, upper=args.upper, b_min=args.b_min, b_max=args.b_max, clip=True
+                keys=["image"], lower=args.lower, upper=args.upper, b_min=0, b_max=1, clip=True
             ),
             transforms.NormalizeIntensityd(keys=["image"]),
             # transforms.ScaleIntensityRanged(

@@ -24,6 +24,7 @@ from monai_research_contributions_main.UNETR.BTCV.optimizers.lr_scheduler import
 from trainer import run_training
 from data_utils.data_loader import get_loader
 from data_utils.data_loader_2 import get_loader_2
+from data_utils.data_loader_3 import get_loader_3
 
 from monai.inferers import sliding_window_inference
 from monai.losses import DiceCELoss, DiceLoss
@@ -33,7 +34,7 @@ from monai.utils.enums import MetricReduction
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument("--checkpoint", default=None, help="start training from saved checkpoint")
-parser.add_argument("--logdir", default="run12", type=str, help="directory to save the tensorboard logs")
+parser.add_argument("--logdir", default="run13", type=str, help="directory to save the tensorboard logs")
 parser.add_argument(
     "--pretrained_dir", default="./runs/run8/", type=str, help="pretrained checkpoint directory"
 )
@@ -72,8 +73,8 @@ parser.add_argument("--conv_block", action="store_true", help="use conv blocks")
 parser.add_argument("--use_normal_dataset", action="store_true", help="use monai Dataset class")
 # parser.add_argument("--a_min", default=-175.0, type=float, help="a_min in ScaleIntensityRanged")
 # parser.add_argument("--a_max", default=250.0, type=float, help="a_max in ScaleIntensityRanged")
-parser.add_argument("--b_min", default=0.0, type=float, help="b_min in ScaleIntensityRanged")
-parser.add_argument("--b_max", default=1.0, type=float, help="b_max in ScaleIntensityRanged")
+# parser.add_argument("--b_min", default=0.0, type=float, help="b_min in ScaleIntensityRanged")
+# parser.add_argument("--b_max", default=1.0, type=float, help="b_max in ScaleIntensityRanged")
 parser.add_argument("--space_x", default=1.5, type=float, help="spacing in x direction")
 parser.add_argument("--space_y", default=1.5, type=float, help="spacing in y direction")
 parser.add_argument("--space_z", default=2.0, type=float, help="spacing in z direction")
@@ -92,12 +93,12 @@ parser.add_argument("--resume_ckpt", action="store_true", help="resume training 
 parser.add_argument("--resume_jit", action="store_true", help="resume training from pretrained torchscript checkpoint")
 parser.add_argument("--smooth_dr", default=1e-6, type=float, help="constant added to dice denominator to avoid nan")
 parser.add_argument("--smooth_nr", default=0.0, type=float, help="constant added to dice numerator to avoid zero")
-parser.add_argument("--lower", default=30.0, type=float, help="lower percentile in ScaleIntensityRangePercentilesd")
-parser.add_argument("--upper", default=99.0, type=float, help="upper percentile in ScaleIntensityRangePercentilesd")
+parser.add_argument("--lower", default=30.0, type=float, help="lower percentile in ScaleIntensityRangePercentilesd for preprocessing option 1")
+parser.add_argument("--upper", default=99.0, type=float, help="upper percentile in ScaleIntensityRangePercentilesd for preprocessing option 1")
 parser.add_argument("--train_samples", default=40, type=int, help="number of samples per training image")
 parser.add_argument("--val_samples", default=20, type=int, help="number of samples per validation image")
 parser.add_argument("--train_sampling", default="uniform", type=str, help="sampling distribution of organs during training")
-parser.add_argument("--preprocessing", default=2, type=int, help="preprocessing option")
+parser.add_argument("--preprocessing", default=3, type=int, help="preprocessing option")
 
 
 def main():
@@ -131,6 +132,8 @@ def main_worker(gpu, args):
         loader = get_loader(args)
     elif args.preprocessing == 2:
         loader = get_loader_2(args)
+    elif args.preprocessing == 3:
+        loader = get_loader_3(args)
     print(args.rank, " gpu", args.gpu)
     if args.rank == 0:
         print("Batch size is:", args.batch_size, "epochs", args.max_epochs)

@@ -17,6 +17,7 @@ import torch
 from networks.unetr_2d import UNETR_2D
 from data_utils.data_loader import get_loader
 from data_utils.data_loader_2 import get_loader_2
+from data_utils.data_loader_3 import get_loader_3
 from data_utils.visualise_data import plot_save_predictions
 
 from monai.inferers import sliding_window_inference
@@ -66,7 +67,7 @@ parser.add_argument("--upper", default=99.0, type=float, help="upper percentile 
 parser.add_argument("--train_samples", default=40, type=int, help="number of samples per training image")
 parser.add_argument("--val_samples", default=20, type=int, help="number of samples per validation image")
 parser.add_argument("--train_sampling", default="uniform", type=str, help="sampling distribution of organs during training")
-parser.add_argument("--preprocessing", default=2, type=int, help="preprocessing option")
+parser.add_argument("--preprocessing", default=1, type=int, help="preprocessing option")
 
 
 def visualise_predictions(args, model, loader, modality, image_index, num_samples):
@@ -91,6 +92,8 @@ def main():
         val_loader = get_loader(args)
     elif args.preprocessing == 2:
         val_loader = get_loader_2(args)
+    elif args.preprocessing == 3:
+        val_loader = get_loader_3(args)
     loader_ct = val_loader[0]
     loader_mri = val_loader[1]
     pretrained_dir = args.pretrained_dir

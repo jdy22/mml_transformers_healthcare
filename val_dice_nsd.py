@@ -18,6 +18,7 @@ from networks.unetr_2d import UNETR_2D
 from trainer import dice
 from data_utils.data_loader import get_loader
 from data_utils.data_loader_2 import get_loader_2
+from data_utils.data_loader_3 import get_loader_3
 
 from monai.inferers import sliding_window_inference
 from monai.metrics import compute_surface_dice
@@ -45,8 +46,8 @@ parser.add_argument("--res_block", action="store_true", help="use residual block
 parser.add_argument("--conv_block", action="store_true", help="use conv blocks")
 # parser.add_argument("--a_min", default=-175.0, type=float, help="a_min in ScaleIntensityRanged")
 # parser.add_argument("--a_max", default=250.0, type=float, help="a_max in ScaleIntensityRanged")
-parser.add_argument("--b_min", default=0.0, type=float, help="b_min in ScaleIntensityRanged")
-parser.add_argument("--b_max", default=1.0, type=float, help="b_max in ScaleIntensityRanged")
+# parser.add_argument("--b_min", default=0.0, type=float, help="b_min in ScaleIntensityRanged")
+# parser.add_argument("--b_max", default=1.0, type=float, help="b_max in ScaleIntensityRanged")
 parser.add_argument("--space_x", default=1.5, type=float, help="spacing in x direction")
 parser.add_argument("--space_y", default=1.5, type=float, help="spacing in y direction")
 parser.add_argument("--space_z", default=2.0, type=float, help="spacing in z direction")
@@ -137,6 +138,8 @@ def main():
         val_loader = get_loader(args)
     elif args.preprocessing == 2:
         val_loader = get_loader_2(args)
+    elif args.preprocessing == 3:
+        val_loader = get_loader_3(args)
     loader_ct = val_loader[0]
     loader_mri = val_loader[1]
     pretrained_dir = args.pretrained_dir
