@@ -18,7 +18,7 @@ import torch
 from monai import data, transforms
 from monai.data import load_decathlon_datalist
 
-from data_loader import Sampler
+from data_utils.data_loader import Sampler
 
 
 def get_loader_2(args):
