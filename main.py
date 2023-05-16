@@ -34,7 +34,7 @@ from monai.utils.enums import MetricReduction
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument("--checkpoint", default=None, help="start training from saved checkpoint")
-parser.add_argument("--logdir", default="run12", type=str, help="directory to save the tensorboard logs")
+parser.add_argument("--logdir", default="run14", type=str, help="directory to save the tensorboard logs")
 parser.add_argument(
     "--pretrained_dir", default="./runs/run8/", type=str, help="pretrained checkpoint directory"
 )
@@ -98,7 +98,8 @@ parser.add_argument("--upper", default=99.0, type=float, help="upper percentile 
 parser.add_argument("--train_samples", default=40, type=int, help="number of samples per training image")
 parser.add_argument("--val_samples", default=20, type=int, help="number of samples per validation image")
 parser.add_argument("--train_sampling", default="uniform", type=str, help="sampling distribution of organs during training")
-parser.add_argument("--preprocessing", default=2, type=int, help="preprocessing option")
+parser.add_argument("--preprocessing", default=1, type=int, help="preprocessing option")
+parser.add_argument("--data_augmentation", action="store_false", help="use data augmentation during training")
 
 
 def main():
@@ -261,7 +262,7 @@ if __name__ == "__main__":
     # args.test_mode = False
     # args.data_dir = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/"
     # args.json_list = "dataset_small.json"
-    # loader = get_loader_3(args)
+    # loader = get_loader(args)
 
     # train_loader=loader[0]
     # for idx, batch_data in enumerate(train_loader):

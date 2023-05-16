@@ -76,50 +76,60 @@ def get_loader(args):
     elif args.train_sampling == "unbalanced":
         train_crop_ratios = [1, 1, 1, 1, 2, 2, 1, 2, 1, 2, 2, 2, 2, 2, 2, 2]
 
-    train_transform = transforms.Compose(
-        [
-            transforms.LoadImaged(keys=["image", "label"]),
-            transforms.AddChanneld(keys=["image", "label"]),
-            transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
-            transforms.Spacingd(
-                keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
-            ),
-            transforms.ScaleIntensityRangePercentilesd(
-                keys=["image"], lower=args.lower, upper=args.upper, b_min=0, b_max=1, clip=True
-            ),
-            transforms.NormalizeIntensityd(keys=["image"]),
-            # transforms.ScaleIntensityRanged(
-            #     keys=["image"], a_min=args.a_min, a_max=args.a_max, b_min=args.b_min, b_max=args.b_max, clip=True
-            # ),
-            # transforms.CropForegroundd(keys=["image", "label"], source_key="image"),
-            transforms.RandCropByLabelClassesd(
-                keys=["image", "label"],
-                label_key="label",
-                spatial_size=(args.roi_x, args.roi_y, args.roi_z),
-                ratios=train_crop_ratios,
-                num_classes=16,
-                num_samples=args.train_samples,
-            ),
-            # transforms.RandCropByPosNegLabeld(
-            #     keys=["image", "label"],
-            #     label_key="label",
-            #     spatial_size=(args.roi_x, args.roi_y),
-            #     pos=1,
-            #     neg=1,
-            #     num_samples=1,
-            #     image_key="image",
-            #     image_threshold=0,
-            # ),
-            # transforms.RandFlipd(keys=["image", "label"], prob=args.RandFlipd_prob, spatial_axis=0),
-            # transforms.RandFlipd(keys=["image", "label"], prob=args.RandFlipd_prob, spatial_axis=1),
-            # transforms.RandRotate90d(keys=["image", "label"], prob=args.RandRotate90d_prob, max_k=3),
-            # transforms.RandScaleIntensityd(keys="image", factors=0.1, prob=args.RandScaleIntensityd_prob),
-            # transforms.RandShiftIntensityd(keys="image", offsets=0.1, prob=args.RandShiftIntensityd_prob),
-            # transforms.SplitDimd(keys=["image", "label"], dim=-1, keepdim=False, list_output=True),
-            transforms.SqueezeDimd(keys=["image", "label"], dim=-1),
-            transforms.ToTensord(keys=["image", "label"]),
-        ]
-    )
+    if args.data_augmentation:
+        train_transform = transforms.Compose(
+            [
+                transforms.LoadImaged(keys=["image", "label"]),
+                transforms.AddChanneld(keys=["image", "label"]),
+                transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
+                transforms.Spacingd(
+                    keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
+                ),
+                transforms.ScaleIntensityRangePercentilesd(
+                    keys=["image"], lower=args.lower, upper=args.upper, b_min=0, b_max=1, clip=True
+                ),
+                transforms.NormalizeIntensityd(keys=["image"]),
+                transforms.RandCropByLabelClassesd(
+                    keys=["image", "label"],
+                    label_key="label",
+                    spatial_size=(args.roi_x, args.roi_y, args.roi_z),
+                    ratios=train_crop_ratios,
+                    num_classes=16,
+                    num_samples=args.train_samples,
+                ),
+                transforms.RandRotated(keys=["image", "label"], range_x=0.52, prob=0.2, mode=("bilinear", "nearest")),
+                transforms.RandScaleIntensityd(keys=["image"], factors=(-0.3, 0.4), prob=0.2),
+                transforms.RandGaussianNoised(keys=["image"], prob=0.1, mean=0.0, std=0.1),
+                transforms.RandAdjustContrastd(keys=["image"], prob=0.15, gamma=(0.75, 1.5)),
+                transforms.SqueezeDimd(keys=["image", "label"], dim=-1),
+                transforms.ToTensord(keys=["image", "label"]),
+            ]
+        )
+    else:
+        train_transform = transforms.Compose(
+            [
+                transforms.LoadImaged(keys=["image", "label"]),
+                transforms.AddChanneld(keys=["image", "label"]),
+                transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
+                transforms.Spacingd(
+                    keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
+                ),
+                transforms.ScaleIntensityRangePercentilesd(
+                    keys=["image"], lower=args.lower, upper=args.upper, b_min=0, b_max=1, clip=True
+                ),
+                transforms.NormalizeIntensityd(keys=["image"]),
+                transforms.RandCropByLabelClassesd(
+                    keys=["image", "label"],
+                    label_key="label",
+                    spatial_size=(args.roi_x, args.roi_y, args.roi_z),
+                    ratios=train_crop_ratios,
+                    num_classes=16,
+                    num_samples=args.train_samples,
+                ),
+                transforms.SqueezeDimd(keys=["image", "label"], dim=-1),
+                transforms.ToTensord(keys=["image", "label"]),
+            ]
+        )
     val_transform = transforms.Compose(
         [
             transforms.LoadImaged(keys=["image", "label"]),
@@ -132,10 +142,6 @@ def get_loader(args):
                 keys=["image"], lower=args.lower, upper=args.upper, b_min=0, b_max=1, clip=True
             ),
             transforms.NormalizeIntensityd(keys=["image"]),
-            # transforms.ScaleIntensityRanged(
-            #    keys=["image"], a_min=args.a_min, a_max=args.a_max, b_min=args.b_min, b_max=args.b_max, clip=True
-            # ),
-            # transforms.CropForegroundd(keys=["image", "label"], source_key="image"),
             transforms.RandCropByLabelClassesd(
                 keys=["image", "label"],
                 label_key="label",
