@@ -12,6 +12,14 @@ def plot_intensity_histogram(img):
     plt.show()
 
 
+def plot_intensity_histogram_from_tensor(img):
+    array_transform = transforms.ToNumpy()
+    img_array = array_transform(img)
+
+    plt.hist(img_array.flatten(), bins=128, density=True)
+    plt.show()
+
+
 # Calculate parameters low and high from window and level
 def wl_to_lh(window, level):
     low = level - window/2

@@ -34,7 +34,7 @@ from monai.utils.enums import MetricReduction
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument("--checkpoint", default=None, help="start training from saved checkpoint")
-parser.add_argument("--logdir", default="run13", type=str, help="directory to save the tensorboard logs")
+parser.add_argument("--logdir", default="run12", type=str, help="directory to save the tensorboard logs")
 parser.add_argument(
     "--pretrained_dir", default="./runs/run8/", type=str, help="pretrained checkpoint directory"
 )
@@ -98,7 +98,7 @@ parser.add_argument("--upper", default=99.0, type=float, help="upper percentile 
 parser.add_argument("--train_samples", default=40, type=int, help="number of samples per training image")
 parser.add_argument("--val_samples", default=20, type=int, help="number of samples per validation image")
 parser.add_argument("--train_sampling", default="uniform", type=str, help="sampling distribution of organs during training")
-parser.add_argument("--preprocessing", default=3, type=int, help="preprocessing option")
+parser.add_argument("--preprocessing", default=2, type=int, help="preprocessing option")
 
 
 def main():
@@ -259,7 +259,9 @@ if __name__ == "__main__":
     
     # args = parser.parse_args()
     # args.test_mode = False
-    # loader = get_loader(args)
+    # args.data_dir = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/"
+    # args.json_list = "dataset_small.json"
+    # loader = get_loader_3(args)
 
     # train_loader=loader[0]
     # for idx, batch_data in enumerate(train_loader):
@@ -272,7 +274,7 @@ if __name__ == "__main__":
     #     print(target.shape)
 
     # # Visualisation
-    # from data_utils.visualise_data import display_2d_tensor
+    # from data_utils.visualise_data import display_2d_tensor, plot_intensity_histogram_from_tensor
 
     # val_loader=loader[1]
     # for idx, batch_data in enumerate(val_loader):
@@ -288,3 +290,4 @@ if __name__ == "__main__":
     #     image = data[0, 0, :, :]
     #     labels = target[0, 0, :, :]
     #     display_2d_tensor(image, labels)
+    #     plot_intensity_histogram_from_tensor(image)

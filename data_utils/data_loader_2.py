@@ -39,8 +39,8 @@ def get_loader_2(args):
             transforms.Spacingd(
                 keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
             ),
-            transforms.ThresholdIntensityd(keys=["image"], threshold=-991, above=False, cval=-991),
-            transforms.ThresholdIntensityd(keys=["image"], threshold=362, above=True, cval=362),
+            transforms.ThresholdIntensityd(keys=["image"], threshold=-991, above=True, cval=-991),
+            transforms.ThresholdIntensityd(keys=["image"], threshold=362, above=False, cval=362),
             transforms.NormalizeIntensityd(keys=["image"], subtrahend=50, divisor=141),
             transforms.RandCropByLabelClassesd(
                 keys=["image", "label"],
@@ -83,8 +83,8 @@ def get_loader_2(args):
             transforms.Spacingd(
                 keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
             ),
-            transforms.ThresholdIntensityd(keys=["image"], threshold=-991, above=False, cval=-991),
-            transforms.ThresholdIntensityd(keys=["image"], threshold=362, above=True, cval=362),
+            transforms.ThresholdIntensityd(keys=["image"], threshold=-991, above=True, cval=-991),
+            transforms.ThresholdIntensityd(keys=["image"], threshold=362, above=False, cval=362),
             transforms.NormalizeIntensityd(keys=["image"], subtrahend=50, divisor=141),
             transforms.RandCropByLabelClassesd(
                 keys=["image", "label"],
