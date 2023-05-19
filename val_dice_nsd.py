@@ -90,10 +90,9 @@ nsd_thresholds_mm = {
     15: 4,
 }
 
-def calculate_score(metric, args, model, loader):
-    # Options for metric: "dice" or "nsd"
-    scores_per_organ = {}
-    nan_inf_count = 0
+def calculate_score(args, model, loader):
+    dice_per_organ = {}
+    nsd_per_organ = {}
     for idx, batch in enumerate(loader):
         val_inputs, val_labels = (batch["image"].cuda(), batch["label"].cuda())
         # img_name = batch["image_meta_dict"]["filename_or_obj"][0].split("/")[-1]
@@ -109,33 +108,34 @@ def calculate_score(metric, args, model, loader):
                 # Skip if organ does not exist in true labels
                 if np.sum(np.sum(np.sum(y_true))) == 0:
                     continue
-                if metric == "dice":
-                    score = dice(y_pred, y_true)
-                elif metric == "nsd":
-                    y_pred = np.expand_dims(y_pred, 0)
-                    y_true = np.expand_dims(y_true, 0)
-                    score = compute_surface_dice(torch.Tensor(y_pred), torch.Tensor(y_true), [nsd_thresholds_mm[organ]/args.space_x])[0, 0]
-                    if np.isposinf(score) or np.isnan(score):
-                        nan_inf_count += 1
-                        continue
-                scores_per_organ.setdefault(organ, []).append(score)
+                dice_score = dice(y_pred, y_true)
+                y_pred = np.expand_dims(y_pred, 0)
+                y_true = np.expand_dims(y_true, 0)
+                nsd_score = compute_surface_dice(torch.Tensor(y_pred), torch.Tensor(y_true), [nsd_thresholds_mm[organ]/args.space_x])[0, 0]
+                dice_per_organ.setdefault(organ, []).append(dice_score)
+                nsd_per_organ.setdefault(organ, []).append(nsd_score)
         print("{}/{} validation images processed".format(idx+1, len(loader)))
     # Calculate mean score per organ and overall
-    total_score = 0
-    for organ in scores_per_organ:
-        scores_per_organ[organ] = np.mean(scores_per_organ[organ])
-        total_score += scores_per_organ[organ]
-    mean_score_overall = total_score/len(scores_per_organ)
-    print("Overall mean {} score: {}".format(metric, mean_score_overall))
-    print("Number of nan and inf values = {}".format(nan_inf_count))
+    total_dice = 0
+    total_nsd = 0
+    for organ in dice_per_organ:
+        dice_per_organ[organ] = np.mean(dice_per_organ[organ])
+        total_dice += dice_per_organ[organ]
+    for organ in nsd_per_organ:
+        nsd_per_organ[organ] = np.mean(nsd_per_organ[organ])
+        total_nsd += nsd_per_organ[organ]
+    mean_dice = total_dice/len(dice_per_organ)
+    mean_nsd = total_nsd/len(nsd_per_organ)
+    print("Overall mean dice score: {}".format(mean_dice))
+    print("Overall mean nsd score: {}".format(mean_nsd))
 
-    return mean_score_overall, scores_per_organ
+    return mean_dice, dice_per_organ, mean_nsd, nsd_per_organ
 
 
 def main():
     args = parser.parse_args()
     args.test_mode = True
-    args.test_type = "test"
+    args.test_type = "validation"
     if args.preprocessing == 1:
         val_loader = get_loader(args)
     elif args.preprocessing == 2:
@@ -171,11 +171,8 @@ def main():
     model.to(device)
 
     with torch.no_grad():
-        mean_dice_ct, mean_dice_per_organ_ct = calculate_score("dice", args, model, loader_ct)
-        mean_nsd_ct, mean_nsd_per_organ_ct = calculate_score("nsd", args, model, loader_ct)
-        
-        mean_dice_mri, mean_dice_per_organ_mri = calculate_score("dice", args, model, loader_mri)
-        mean_nsd_mri, mean_nsd_per_organ_mri = calculate_score("nsd", args, model, loader_mri)
+        mean_dice_ct, mean_dice_per_organ_ct, mean_nsd_ct, mean_nsd_per_organ_ct = calculate_score(args, model, loader_ct)
+        mean_dice_mri, mean_dice_per_organ_mri, mean_nsd_mri, mean_nsd_per_organ_mri = calculate_score(args, model, loader_mri)
 
         print("Final scores:")
         print(f"CT: mDice = {mean_dice_ct}, mNSD = {mean_nsd_ct}")
