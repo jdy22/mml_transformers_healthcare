@@ -156,7 +156,10 @@ def get_loader(args):
     )
     
     if args.test_mode:
-        test_files_ct = load_decathlon_datalist(datalist_json, True, "internal-validation-ct", base_dir=data_dir)
+        if args.test_type == "validation":
+            test_files_ct = load_decathlon_datalist(datalist_json, True, "internal-validation-ct", base_dir=data_dir)
+        elif args.test_type == "test":
+            test_files_ct = load_decathlon_datalist(datalist_json, True, "validation-ct", base_dir=data_dir)
         test_ds_ct = data.Dataset(data=test_files_ct, transform=val_transform)
         test_sampler_ct = Sampler(test_ds_ct, shuffle=False) if args.distributed else None
         test_loader_ct = data.DataLoader(
@@ -168,7 +171,10 @@ def get_loader(args):
             pin_memory=True,
             persistent_workers=True,
         )
-        test_files_mri = load_decathlon_datalist(datalist_json, True, "internal-validation-mri", base_dir=data_dir)
+        if args.test_type == "validation":
+            test_files_mri = load_decathlon_datalist(datalist_json, True, "internal-validation-mri", base_dir=data_dir)
+        elif args.test_type == "test":
+            test_files_mri = load_decathlon_datalist(datalist_json, True, "validation-mri", base_dir=data_dir)
         test_ds_mri = data.Dataset(data=test_files_mri, transform=val_transform)
         test_sampler_mri = Sampler(test_ds_mri, shuffle=False) if args.distributed else None
         test_loader_mri = data.DataLoader(

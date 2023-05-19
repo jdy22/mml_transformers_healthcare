@@ -88,6 +88,7 @@ def visualise_predictions(args, model, loader, modality, image_index, num_sample
 def main():
     args = parser.parse_args()
     args.test_mode = True
+    args.test_type = "validation"
     if args.preprocessing == 1:
         val_loader = get_loader(args)
     elif args.preprocessing == 2:
