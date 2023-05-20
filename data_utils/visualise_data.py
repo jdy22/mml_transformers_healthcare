@@ -12,6 +12,18 @@ def plot_intensity_histogram(img):
     plt.show()
 
 
+def plot_intensity_histogram_ct_mri(img_ct, img_mri):
+    # Convert SimpleITK image to NumPy array
+    img_array_ct = sitk.GetArrayFromImage(img_ct)
+    img_array_mri = sitk.GetArrayFromImage(img_mri)
+
+    plt.hist(img_array_ct.flatten(), bins=128, density=True, alpha=0.5, label='CT')
+    plt.hist(img_array_mri.flatten(), bins=128, density=True, alpha=0.5, label='MRI')
+    plt.legend(loc='upper right')
+    plt.ylim([0, 0.01])
+    plt.show()
+
+
 def plot_intensity_histogram_from_tensor(img):
     array_transform = transforms.ToNumpy()
     img_array = array_transform(img)
@@ -174,16 +186,24 @@ def plot_save_predictions(x, y_pred, y_true, image_index, sample_no, args, modal
 
 
 if __name__ == "__main__":
-    image_filename = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/imagesVa/amos_0008.nii.gz"
-    image = sitk.ReadImage(image_filename)
+    # image_filename = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/imagesVa/amos_0008.nii.gz"
+    # image = sitk.ReadImage(image_filename)
     # display_image(image, window=350, level=50) # For CT images
     # display_image(image, window=600, level=200) # For MRI images
-    print(f"Image size: {image.GetSize()}")
-    print(f"Image spacing: {image.GetSpacing()}")
+    # print(f"Image size: {image.GetSize()}")
+    # print(f"Image spacing: {image.GetSpacing()}")
 
-    labels_filename = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/labelsVa/amos_0008.nii.gz"
-    labels = sitk.ReadImage(labels_filename)
+    # labels_filename = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/labelsVa/amos_0008.nii.gz"
+    # labels = sitk.ReadImage(labels_filename)
     # display_image(sitk.LabelToRGB(labels))
 
-    display_image_and_labels(image, sitk.LabelToRGB(labels), window=350, level=50)
-    plot_intensity_histogram(image)
+    # display_image_and_labels(image, sitk.LabelToRGB(labels), window=350, level=50)
+    # plot_intensity_histogram(image)
+
+    image_filename_ct = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/imagesTr/amos_0083.nii.gz"
+    image_ct = sitk.ReadImage(image_filename_ct)
+
+    image_filename_mri = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/imagesTr/amos_0600.nii.gz"
+    image_mri = sitk.ReadImage(image_filename_mri)
+
+    plot_intensity_histogram_ct_mri(image_ct, image_mri)
