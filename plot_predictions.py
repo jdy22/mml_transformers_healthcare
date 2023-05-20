@@ -125,7 +125,7 @@ def main():
     model.to(device)
 
     with torch.no_grad():
-        visualise_predictions(args, model, loader_ct, modality="CT", image_index=0, num_samples=5)
+        # visualise_predictions(args, model, loader_ct, modality="CT", image_index=0, num_samples=5)
         visualise_predictions(args, model, loader_mri, modality="MRI", image_index=0, num_samples=5)
 
 

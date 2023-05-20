@@ -98,8 +98,8 @@ parser.add_argument("--upper", default=99.0, type=float, help="upper percentile 
 parser.add_argument("--train_samples", default=40, type=int, help="number of samples per training image")
 parser.add_argument("--val_samples", default=20, type=int, help="number of samples per validation image")
 parser.add_argument("--train_sampling", default="uniform", type=str, help="sampling distribution of organs during training")
-parser.add_argument("--preprocessing", default=3, type=int, help="preprocessing option")
-parser.add_argument("--data_augmentation", action="store_false", help="use data augmentation during training")
+parser.add_argument("--preprocessing", default=2, type=int, help="preprocessing option")
+parser.add_argument("--data_augmentation", action="store_true", help="use data augmentation during training")
 
 
 def main():
@@ -252,17 +252,18 @@ def main_worker(gpu, args):
 
 
 if __name__ == "__main__":
-    import resource
-    rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
-    resource.setrlimit(resource.RLIMIT_NOFILE, (2048, rlimit[1]))
+    # import resource
+    # rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
+    # resource.setrlimit(resource.RLIMIT_NOFILE, (2048, rlimit[1]))
 
-    main()
+    # main()
     
-    # args = parser.parse_args()
-    # args.test_mode = False
-    # args.data_dir = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/"
-    # args.json_list = "dataset_small.json"
-    # loader = get_loader(args)
+    args = parser.parse_args()
+    args.test_mode = True
+    args.test_type = "validation"
+    args.data_dir = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/"
+    args.json_list = "dataset_small.json"
+    loader = get_loader_2(args)
 
     # train_loader=loader[0]
     # for idx, batch_data in enumerate(train_loader):
@@ -274,21 +275,30 @@ if __name__ == "__main__":
     #     print(data.shape)
     #     print(target.shape)
 
-    # # Visualisation
-    # from data_utils.visualise_data import display_2d_tensor, plot_intensity_histogram_from_tensor
+    # Visualisation
+    from data_utils.visualise_data import display_2d_tensor, plot_intensity_histogram_from_tensor_ct_mri
 
-    # val_loader=loader[1]
-    # for idx, batch_data in enumerate(val_loader):
-    #     if isinstance(batch_data, list):
-    #         data, target = batch_data
-    #     else:
-    #         data, target = batch_data["image"], batch_data["label"]
-    #     print(idx)
-    #     print(data.shape)
-    #     print(target.shape)
+    val_loader_ct = loader[0]
+    for idx, batch_data in enumerate(val_loader_ct):
+        if isinstance(batch_data, list):
+            data_ct, target_ct = batch_data
+        else:
+            data_ct, target_ct = batch_data["image"], batch_data["label"]
+        print(idx)
+        print(data_ct.shape)
+        print(target_ct.shape)
 
-    #     # Visualisation
-    #     image = data[0, 0, :, :]
-    #     labels = target[0, 0, :, :]
-    #     display_2d_tensor(image, labels)
-    #     plot_intensity_histogram_from_tensor(image)
+    val_loader_mri = loader[1]
+    for idx, batch_data in enumerate(val_loader_mri):
+        if isinstance(batch_data, list):
+            data_mri, target_mri = batch_data
+        else:
+            data_mri, target_mri = batch_data["image"], batch_data["label"]
+        print(idx)
+        print(data_mri.shape)
+        print(target_mri.shape)
+
+    # Visualisation
+    image_ct = data_ct[0, 0, :, :]
+    image_mri = data_mri[0, 0, :, :]
+    plot_intensity_histogram_from_tensor_ct_mri(image_ct, image_mri)

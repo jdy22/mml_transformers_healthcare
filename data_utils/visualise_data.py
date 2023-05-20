@@ -32,6 +32,18 @@ def plot_intensity_histogram_from_tensor(img):
     plt.show()
 
 
+def plot_intensity_histogram_from_tensor_ct_mri(img_ct, img_mri):
+    array_transform = transforms.ToNumpy()
+    img_array_ct = array_transform(img_ct)
+    img_array_mri = array_transform(img_mri)
+
+    plt.hist(img_array_ct.flatten(), bins=128, density=True, alpha=0.5, label='CT')
+    plt.hist(img_array_mri.flatten(), bins=128, density=True, alpha=0.5, label='MRI')
+    plt.legend(loc='upper right')
+    plt.ylim([0, 2])
+    plt.show()
+
+
 # Calculate parameters low and high from window and level
 def wl_to_lh(window, level):
     low = level - window/2
