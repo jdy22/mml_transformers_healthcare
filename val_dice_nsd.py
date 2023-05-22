@@ -135,7 +135,7 @@ def calculate_score(args, model, loader):
 def main():
     args = parser.parse_args()
     args.test_mode = True
-    args.test_type = "validation"
+    args.test_type = "test"
     if args.preprocessing == 1:
         val_loader = get_loader(args)
     elif args.preprocessing == 2:

@@ -252,18 +252,18 @@ def main_worker(gpu, args):
 
 
 if __name__ == "__main__":
-    # import resource
-    # rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
-    # resource.setrlimit(resource.RLIMIT_NOFILE, (2048, rlimit[1]))
+    import resource
+    rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
+    resource.setrlimit(resource.RLIMIT_NOFILE, (2048, rlimit[1]))
 
-    # main()
+    main()
     
-    args = parser.parse_args()
-    args.test_mode = True
-    args.test_type = "validation"
-    args.data_dir = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/"
-    args.json_list = "dataset_small.json"
-    loader = get_loader_2(args)
+    # args = parser.parse_args()
+    # args.test_mode = True
+    # args.test_type = "validation"
+    # args.data_dir = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/"
+    # args.json_list = "dataset_small.json"
+    # loader = get_loader_2(args)
 
     # train_loader=loader[0]
     # for idx, batch_data in enumerate(train_loader):
@@ -275,30 +275,30 @@ if __name__ == "__main__":
     #     print(data.shape)
     #     print(target.shape)
 
-    # Visualisation
-    from data_utils.visualise_data import display_2d_tensor, plot_intensity_histogram_from_tensor_ct_mri
+    # # Visualisation
+    # from data_utils.visualise_data import display_2d_tensor, plot_intensity_histogram_from_tensor_ct_mri
 
-    val_loader_ct = loader[0]
-    for idx, batch_data in enumerate(val_loader_ct):
-        if isinstance(batch_data, list):
-            data_ct, target_ct = batch_data
-        else:
-            data_ct, target_ct = batch_data["image"], batch_data["label"]
-        print(idx)
-        print(data_ct.shape)
-        print(target_ct.shape)
+    # val_loader_ct = loader[0]
+    # for idx, batch_data in enumerate(val_loader_ct):
+    #     if isinstance(batch_data, list):
+    #         data_ct, target_ct = batch_data
+    #     else:
+    #         data_ct, target_ct = batch_data["image"], batch_data["label"]
+    #     print(idx)
+    #     print(data_ct.shape)
+    #     print(target_ct.shape)
 
-    val_loader_mri = loader[1]
-    for idx, batch_data in enumerate(val_loader_mri):
-        if isinstance(batch_data, list):
-            data_mri, target_mri = batch_data
-        else:
-            data_mri, target_mri = batch_data["image"], batch_data["label"]
-        print(idx)
-        print(data_mri.shape)
-        print(target_mri.shape)
+    # val_loader_mri = loader[1]
+    # for idx, batch_data in enumerate(val_loader_mri):
+    #     if isinstance(batch_data, list):
+    #         data_mri, target_mri = batch_data
+    #     else:
+    #         data_mri, target_mri = batch_data["image"], batch_data["label"]
+    #     print(idx)
+    #     print(data_mri.shape)
+    #     print(target_mri.shape)
 
-    # Visualisation
-    image_ct = data_ct[0, 0, :, :]
-    image_mri = data_mri[0, 0, :, :]
-    plot_intensity_histogram_from_tensor_ct_mri(image_ct, image_mri)
+    # # Visualisation
+    # image_ct = data_ct[0, 0, :, :]
+    # image_mri = data_mri[0, 0, :, :]
+    # plot_intensity_histogram_from_tensor_ct_mri(image_ct, image_mri)
