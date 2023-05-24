@@ -34,7 +34,7 @@ from monai.utils.enums import MetricReduction
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument("--checkpoint", default=None, help="start training from saved checkpoint")
-parser.add_argument("--logdir", default="run16", type=str, help="directory to save the tensorboard logs")
+parser.add_argument("--logdir", default="run17", type=str, help="directory to save the tensorboard logs")
 parser.add_argument(
     "--pretrained_dir", default="./runs/run13/", type=str, help="pretrained checkpoint directory"
 )
@@ -65,7 +65,7 @@ parser.add_argument("--norm_name", default="instance", type=str, help="normaliza
 parser.add_argument("--num_heads", default=12, type=int, help="number of attention heads in ViT encoder")
 parser.add_argument("--mlp_dim", default=3072, type=int, help="mlp dimention in ViT encoder")
 parser.add_argument("--hidden_size", default=768, type=int, help="hidden size dimention in ViT encoder")
-parser.add_argument("--feature_size", default=16, type=int, help="feature size dimention")
+parser.add_argument("--feature_size", default=32, type=int, help="feature size dimention")
 parser.add_argument("--in_channels", default=1, type=int, help="number of input channels")
 parser.add_argument("--out_channels", default=16, type=int, help="number of output channels")
 parser.add_argument("--res_block", action="store_true", help="use residual blocks")
@@ -99,7 +99,7 @@ parser.add_argument("--train_samples", default=40, type=int, help="number of sam
 parser.add_argument("--val_samples", default=20, type=int, help="number of samples per validation image")
 parser.add_argument("--train_sampling", default="uniform", type=str, help="sampling distribution of organs during training")
 parser.add_argument("--preprocessing", default=2, type=int, help="preprocessing option")
-parser.add_argument("--data_augmentation", action="store_true", help="use data augmentation during training")
+parser.add_argument("--data_augmentation", action="store_false", help="use data augmentation during training")
 
 
 def main():
