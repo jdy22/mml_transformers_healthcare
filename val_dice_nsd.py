@@ -175,12 +175,12 @@ def main():
     model.to(device)
 
     with torch.no_grad():
-        mean_dice_ct, mean_dice_per_organ_ct, mean_dist_ct, mean_dist_per_organ_ct = calculate_score(args, model, loader_ct, metric="nsd")
-        mean_dice_mri, mean_dice_per_organ_mri, mean_dist_mri, mean_dist_per_organ_mri = calculate_score(args, model, loader_mri, metric="nsd")
+        mean_dice_ct, mean_dice_per_organ_ct, mean_dist_ct, mean_dist_per_organ_ct = calculate_score(args, model, loader_ct, metric="hausdorff")
+        mean_dice_mri, mean_dice_per_organ_mri, mean_dist_mri, mean_dist_per_organ_mri = calculate_score(args, model, loader_mri, metric="hausdorff")
 
         print("Final scores:")
-        print(f"CT: mDice = {mean_dice_ct}, mNSD = {mean_dist_ct}")
-        print(f"MRI: mDice = {mean_dice_mri}, mNSD = {mean_dist_mri}")
+        print(f"CT: mDice = {mean_dice_ct}, mDist = {mean_dist_ct}")
+        print(f"MRI: mDice = {mean_dice_mri}, mDist = {mean_dist_mri}")
 
         print(mean_dice_per_organ_ct)
         print(mean_dist_per_organ_ct)
