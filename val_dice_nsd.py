@@ -107,7 +107,7 @@ def calculate_score(args, model, loader, metric):
                 y_pred = (val_outputs[i] == organ)
                 y_true = (val_labels[i] == organ)
                 # Skip if organ does not exist in true labels
-                if np.sum(np.sum(np.sum(y_true))) == 0:
+                if np.sum(np.sum(np.sum(y_pred))) == 0 or np.sum(np.sum(np.sum(y_true))) == 0:
                     continue
                 dice_score = dice(y_pred, y_true)
                 y_pred = np.expand_dims(y_pred, 0)
