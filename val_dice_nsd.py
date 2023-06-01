@@ -21,11 +21,11 @@ from data_utils.data_loader_2 import get_loader_2
 from data_utils.data_loader_3 import get_loader_3
 
 from monai.inferers import sliding_window_inference
-from monai.metrics import compute_surface_dice
+from monai.metrics import compute_surface_dice, compute_hausdorff_distance
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument(
-    "--pretrained_dir", default="./runs/run15/", type=str, help="pretrained checkpoint directory"
+    "--pretrained_dir", default="./runs/run18/", type=str, help="pretrained checkpoint directory"
 )
 parser.add_argument("--data_dir", default="./amos22/", type=str, help="dataset directory")
 parser.add_argument("--json_list", default="dataset_internal_val.json", type=str, help="dataset json file")
@@ -37,7 +37,7 @@ parser.add_argument(
 )
 parser.add_argument("--mlp_dim", default=3072, type=int, help="mlp dimention in ViT encoder")
 parser.add_argument("--hidden_size", default=768, type=int, help="hidden size dimention in ViT encoder")
-parser.add_argument("--feature_size", default=16, type=int, help="feature size dimention")
+parser.add_argument("--feature_size", default=64, type=int, help="feature size dimention")
 parser.add_argument("--infer_overlap", default=0.5, type=float, help="sliding window inference overlap")
 parser.add_argument("--in_channels", default=1, type=int, help="number of input channels")
 parser.add_argument("--out_channels", default=16, type=int, help="number of output channels")
@@ -90,9 +90,10 @@ nsd_thresholds_mm = {
     15: 4,
 }
 
-def calculate_score(args, model, loader):
+def calculate_score(args, model, loader, metric):
+    # Options for metric: "nsd" or "hausdorff"
     dice_per_organ = {}
-    nsd_per_organ = {}
+    dist_per_organ = {}
     for idx, batch in enumerate(loader):
         val_inputs, val_labels = (batch["image"].cuda(), batch["label"].cuda())
         # img_name = batch["image_meta_dict"]["filename_or_obj"][0].split("/")[-1]
@@ -111,31 +112,34 @@ def calculate_score(args, model, loader):
                 dice_score = dice(y_pred, y_true)
                 y_pred = np.expand_dims(y_pred, 0)
                 y_true = np.expand_dims(y_true, 0)
-                nsd_score = compute_surface_dice(torch.Tensor(y_pred), torch.Tensor(y_true), [nsd_thresholds_mm[organ]/args.space_x])[0, 0]
+                if metric == "nsd":
+                    dist_score = compute_surface_dice(torch.Tensor(y_pred), torch.Tensor(y_true), [nsd_thresholds_mm[organ]/args.space_x])[0, 0]
+                elif metric == "hausdorff":
+                    dist_score = compute_hausdorff_distance(torch.Tensor(y_pred), torch.Tensor(y_true), percentile=95)[0, 0]
                 dice_per_organ.setdefault(organ, []).append(dice_score)
-                nsd_per_organ.setdefault(organ, []).append(nsd_score)
+                dist_per_organ.setdefault(organ, []).append(dist_score)
         print("{}/{} validation images processed".format(idx+1, len(loader)))
     # Calculate mean score per organ and overall
     total_dice = 0
-    total_nsd = 0
+    total_dist = 0
     for organ in dice_per_organ:
         dice_per_organ[organ] = np.mean(dice_per_organ[organ])
         total_dice += dice_per_organ[organ]
-    for organ in nsd_per_organ:
-        nsd_per_organ[organ] = np.mean(nsd_per_organ[organ])
-        total_nsd += nsd_per_organ[organ]
+    for organ in dist_per_organ:
+        dist_per_organ[organ] = np.mean(dist_per_organ[organ])
+        total_dist += dist_per_organ[organ]
     mean_dice = total_dice/len(dice_per_organ)
-    mean_nsd = total_nsd/len(nsd_per_organ)
+    mean_dist = total_dist/len(dist_per_organ)
     print("Overall mean dice score: {}".format(mean_dice))
-    print("Overall mean nsd score: {}".format(mean_nsd))
+    print("Overall mean {} score: {}".format(metric, mean_dist))
 
-    return mean_dice, dice_per_organ, mean_nsd, nsd_per_organ
+    return mean_dice, dice_per_organ, mean_dist, dist_per_organ
 
 
 def main():
     args = parser.parse_args()
     args.test_mode = True
-    args.test_type = "test"
+    args.test_type = "test" # "validation" or "test"
     if args.preprocessing == 1:
         val_loader = get_loader(args)
     elif args.preprocessing == 2:
@@ -171,17 +175,17 @@ def main():
     model.to(device)
 
     with torch.no_grad():
-        mean_dice_ct, mean_dice_per_organ_ct, mean_nsd_ct, mean_nsd_per_organ_ct = calculate_score(args, model, loader_ct)
-        mean_dice_mri, mean_dice_per_organ_mri, mean_nsd_mri, mean_nsd_per_organ_mri = calculate_score(args, model, loader_mri)
+        mean_dice_ct, mean_dice_per_organ_ct, mean_dist_ct, mean_dist_per_organ_ct = calculate_score(args, model, loader_ct, metric="nsd")
+        mean_dice_mri, mean_dice_per_organ_mri, mean_dist_mri, mean_dist_per_organ_mri = calculate_score(args, model, loader_mri, metric="nsd")
 
         print("Final scores:")
-        print(f"CT: mDice = {mean_dice_ct}, mNSD = {mean_nsd_ct}")
-        print(f"MRI: mDice = {mean_dice_mri}, mNSD = {mean_nsd_mri}")
+        print(f"CT: mDice = {mean_dice_ct}, mNSD = {mean_dist_ct}")
+        print(f"MRI: mDice = {mean_dice_mri}, mNSD = {mean_dist_mri}")
 
         print(mean_dice_per_organ_ct)
-        print(mean_nsd_per_organ_ct)
+        print(mean_dist_per_organ_ct)
         print(mean_dice_per_organ_mri)
-        print(mean_nsd_per_organ_mri)
+        print(mean_dist_per_organ_mri)
 
 
 if __name__ == "__main__":
