@@ -107,7 +107,7 @@ def calculate_score(args, model, loader, metric):
                 y_pred = (val_outputs[i] == organ)
                 y_true = (val_labels[i] == organ)
                 # Skip if organ does not exist in true labels
-                if np.sum(np.sum(np.sum(y_pred))) == 0 or np.sum(np.sum(np.sum(y_true))) == 0:
+                if np.sum(np.sum(np.sum(y_true))) == 0:
                     continue
                 dice_score = dice(y_pred, y_true)
                 y_pred = np.expand_dims(y_pred, 0)
@@ -116,6 +116,8 @@ def calculate_score(args, model, loader, metric):
                     dist_score = compute_surface_dice(torch.Tensor(y_pred), torch.Tensor(y_true), [nsd_thresholds_mm[organ]/args.space_x])[0, 0]
                 elif metric == "hausdorff":
                     dist_score = compute_hausdorff_distance(torch.Tensor(y_pred), torch.Tensor(y_true), percentile=95)[0, 0]
+                    if np.isnan(dist_score) or np.isinf(dist_score):
+                        dist_score = max(y_pred.shape[2], y_pred.shape[3])
                 dice_per_organ.setdefault(organ, []).append(dice_score)
                 dist_per_organ.setdefault(organ, []).append(dist_score)
         print("{}/{} validation images processed".format(idx+1, len(loader)))
