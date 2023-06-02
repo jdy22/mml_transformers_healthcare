@@ -70,6 +70,7 @@ parser.add_argument("--val_samples", default=20, type=int, help="number of sampl
 parser.add_argument("--train_sampling", default="uniform", type=str, help="sampling distribution of organs during training")
 parser.add_argument("--preprocessing", default=2, type=int, help="preprocessing option")
 parser.add_argument("--data_augmentation", action="store_false", help="use data augmentation during training")
+parser.add_argument("--distance_metric", default="hausdorff", type=str, help="distance metric for evaluation - hausdorff or nsd")
 
 
 nsd_thresholds_mm = {
@@ -90,10 +91,63 @@ nsd_thresholds_mm = {
     15: 4,
 }
 
-def calculate_score(args, model, loader, metric):
-    # Options for metric: "nsd" or "hausdorff"
+
+def calculate_dice_hausdorff(args, model, loader):
     dice_per_organ = {}
-    dist_per_organ = {}
+    hd_per_organ = {}
+    counts_per_organ = {}
+    for idx, batch in enumerate(loader):
+        val_inputs, val_labels = (batch["image"].cuda(), batch["label"].cuda())
+        # img_name = batch["image_meta_dict"]["filename_or_obj"][0].split("/")[-1]
+        # print("Inference on case {}".format(img_name))
+        val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap)
+        val_outputs = torch.softmax(val_outputs, 1).cpu().numpy()
+        val_outputs = np.argmax(val_outputs, axis=1, keepdims=True).astype(np.uint8)
+        val_labels = val_labels.cpu().numpy()
+        for i in range(val_outputs.shape[0]):
+            for organ in range(1, 16):
+                y_pred = (val_outputs[i] == organ)
+                y_true = (val_labels[i] == organ)
+                # Skip if organ does not exist in true labels
+                if np.sum(np.sum(np.sum(y_true))) == 0:
+                    continue
+                counts_per_organ.setdefault(organ, [0, 0])[1] += 1
+                dice_score = dice(y_pred, y_true)
+                dice_per_organ.setdefault(organ, []).append(dice_score)
+                y_pred = np.expand_dims(y_pred, 0)
+                y_true = np.expand_dims(y_true, 0)
+                hd_score = compute_hausdorff_distance(torch.Tensor(y_pred), torch.Tensor(y_true), percentile=95)[0, 0]
+                if np.isnan(hd_score) or np.isinf(hd_score):
+                    counts_per_organ[organ][0] += 1
+                else:
+                    hd_per_organ.setdefault(organ, []).append(hd_score)
+        print("{}/{} validation images processed".format(idx+1, len(loader)))
+    # Calculate mean score per organ and overall
+    total_dice = 0
+    total_hd = 0
+    total_count = 0
+    for organ in dice_per_organ:
+        dice_per_organ[organ] = np.mean(dice_per_organ[organ])
+        total_dice += dice_per_organ[organ]
+    for organ in hd_per_organ:
+        hd_per_organ[organ] = np.mean(hd_per_organ[organ])
+        total_hd += hd_per_organ[organ]
+    for organ in counts_per_organ:
+        counts_per_organ[organ] = counts_per_organ[organ][0]/counts_per_organ[organ][1]
+        total_count += counts_per_organ[organ]
+    mean_dice = total_dice/len(dice_per_organ)
+    mean_hd = total_hd/len(hd_per_organ)
+    mean_count = total_count/len(counts_per_organ)
+    print("Overall mean dice score: {}".format(mean_dice))
+    print("Overall mean hausdorff score: {}".format(mean_hd))
+    print("Overall mean missed predictions: {}".format(mean_count))
+
+    return mean_dice, dice_per_organ, mean_hd, hd_per_organ, mean_count, counts_per_organ
+
+
+def calculate_dice_nsd(args, model, loader):
+    dice_per_organ = {}
+    nsd_per_organ = {}
     for idx, batch in enumerate(loader):
         val_inputs, val_labels = (batch["image"].cuda(), batch["label"].cuda())
         # img_name = batch["image_meta_dict"]["filename_or_obj"][0].split("/")[-1]
@@ -112,30 +166,25 @@ def calculate_score(args, model, loader, metric):
                 dice_score = dice(y_pred, y_true)
                 y_pred = np.expand_dims(y_pred, 0)
                 y_true = np.expand_dims(y_true, 0)
-                if metric == "nsd":
-                    dist_score = compute_surface_dice(torch.Tensor(y_pred), torch.Tensor(y_true), [nsd_thresholds_mm[organ]/args.space_x])[0, 0]
-                elif metric == "hausdorff":
-                    dist_score = compute_hausdorff_distance(torch.Tensor(y_pred), torch.Tensor(y_true), percentile=95)[0, 0]
-                    if np.isnan(dist_score) or np.isinf(dist_score):
-                        dist_score = max(y_pred.shape[2], y_pred.shape[3])
+                nsd_score = compute_surface_dice(torch.Tensor(y_pred), torch.Tensor(y_true), [nsd_thresholds_mm[organ]/args.space_x])[0, 0]
                 dice_per_organ.setdefault(organ, []).append(dice_score)
-                dist_per_organ.setdefault(organ, []).append(dist_score)
+                nsd_per_organ.setdefault(organ, []).append(nsd_score)
         print("{}/{} validation images processed".format(idx+1, len(loader)))
     # Calculate mean score per organ and overall
     total_dice = 0
-    total_dist = 0
+    total_nsd = 0
     for organ in dice_per_organ:
         dice_per_organ[organ] = np.mean(dice_per_organ[organ])
         total_dice += dice_per_organ[organ]
-    for organ in dist_per_organ:
-        dist_per_organ[organ] = np.mean(dist_per_organ[organ])
-        total_dist += dist_per_organ[organ]
+    for organ in nsd_per_organ:
+        nsd_per_organ[organ] = np.mean(nsd_per_organ[organ])
+        total_nsd += nsd_per_organ[organ]
     mean_dice = total_dice/len(dice_per_organ)
-    mean_dist = total_dist/len(dist_per_organ)
+    mean_nsd = total_nsd/len(nsd_per_organ)
     print("Overall mean dice score: {}".format(mean_dice))
-    print("Overall mean {} score: {}".format(metric, mean_dist))
+    print("Overall mean nsd score: {}".format(mean_nsd))
 
-    return mean_dice, dice_per_organ, mean_dist, dist_per_organ
+    return mean_dice, dice_per_organ, mean_nsd, nsd_per_organ
 
 
 def main():
@@ -177,17 +226,28 @@ def main():
     model.to(device)
 
     with torch.no_grad():
-        mean_dice_ct, mean_dice_per_organ_ct, mean_dist_ct, mean_dist_per_organ_ct = calculate_score(args, model, loader_ct, metric="hausdorff")
-        mean_dice_mri, mean_dice_per_organ_mri, mean_dist_mri, mean_dist_per_organ_mri = calculate_score(args, model, loader_mri, metric="hausdorff")
-
-        print("Final scores:")
-        print(f"CT: mDice = {mean_dice_ct}, mDist = {mean_dist_ct}")
-        print(f"MRI: mDice = {mean_dice_mri}, mDist = {mean_dist_mri}")
-
-        print(mean_dice_per_organ_ct)
-        print(mean_dist_per_organ_ct)
-        print(mean_dice_per_organ_mri)
-        print(mean_dist_per_organ_mri)
+        if args.distance_metric == "hausdorff":
+            mean_dice_ct, mean_dice_per_organ_ct, mean_hd_ct, mean_hd_per_organ_ct, mean_count_ct, counts_per_organ_ct = calculate_dice_hausdorff(args, model, loader_ct)
+            mean_dice_mri, mean_dice_per_organ_mri, mean_hd_mri, mean_hd_per_organ_mri, mean_count_mri, counts_per_organ_mri = calculate_dice_hausdorff(args, model, loader_mri)
+            print("Final scores:")
+            print(f"CT: mDice = {mean_dice_ct}, mHD95 = {mean_hd_ct}, missed predictions = {mean_count_ct}")
+            print(f"MRI: mDice = {mean_dice_mri}, mHD95 = {mean_hd_mri}, missed predictions = {mean_count_mri}")
+            print(mean_dice_per_organ_ct)
+            print(mean_hd_per_organ_ct)
+            print(counts_per_organ_ct)
+            print(mean_dice_per_organ_mri)
+            print(mean_hd_per_organ_mri)
+            print(counts_per_organ_mri)
+        elif args.distance_metric == "nsd":
+            mean_dice_ct, mean_dice_per_organ_ct, mean_nsd_ct, mean_nsd_per_organ_ct = calculate_dice_nsd(args, model, loader_ct)
+            mean_dice_mri, mean_dice_per_organ_mri, mean_nsd_mri, mean_nsd_per_organ_mri = calculate_dice_nsd(args, model, loader_mri)
+            print("Final scores:")
+            print(f"CT: mDice = {mean_dice_ct}, mNSD = {mean_nsd_ct}")
+            print(f"MRI: mDice = {mean_dice_mri}, mNSD = {mean_nsd_mri}")
+            print(mean_dice_per_organ_ct)
+            print(mean_nsd_per_organ_ct)
+            print(mean_dice_per_organ_mri)
+            print(mean_nsd_per_organ_mri)
 
 
 if __name__ == "__main__":
