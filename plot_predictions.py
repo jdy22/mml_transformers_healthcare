@@ -89,7 +89,7 @@ def visualise_predictions(args, model, loader, modality, image_index, num_sample
 def main():
     args = parser.parse_args()
     args.test_mode = True
-    args.test_type = "validation"
+    args.test_type = "test" # "validation" or "test"
     if args.preprocessing == 1:
         val_loader = get_loader(args)
     elif args.preprocessing == 2:
@@ -125,7 +125,7 @@ def main():
     model.to(device)
 
     with torch.no_grad():
-        # visualise_predictions(args, model, loader_ct, modality="CT", image_index=0, num_samples=5)
+        visualise_predictions(args, model, loader_ct, modality="CT", image_index=0, num_samples=5)
         visualise_predictions(args, model, loader_mri, modality="MRI", image_index=0, num_samples=5)
 
 
