@@ -7,6 +7,8 @@ from monai import transforms
 
 organ_cmap = ListedColormap(["black", "red", "orange", "gold", "darkgreen", "lawngreen", "blue", "deepskyblue", "mediumslateblue",
                              "plum", "chocolate", "goldenrod", "yellow", "darkturquoise", "darkviolet", "pink"])
+organ_cmap2 = ListedColormap(["gray", "red", "orange", "gold", "darkgreen", "lawngreen", "blue", "deepskyblue", "mediumslateblue",
+                             "plum", "chocolate", "goldenrod", "yellow", "darkturquoise", "darkviolet", "pink"])
 
 
 def plot_intensity_histogram(img):
@@ -240,13 +242,13 @@ def plot_save_predictions(x, y_pred, y_true, image_index, sample_no, args, modal
     level = window / 2 + np.min(x)
     low, high = wl_to_lh(window,level)
 
-    fig, ((ax1), (ax2)) = plt.subplots(1, 2, figsize=(10, 3.5))
+    fig, ((ax1), (ax2)) = plt.subplots(1, 2, figsize=(14, 3.5))
 
     ax1.imshow(np.transpose(x), cmap='gray', clim=(low, high), extent=(0, width, height, 0))
-    ax1.imshow(np.transpose(y_true), cmap=organ_cmap, clim=(-0.5, 15.5), alpha=0.5, extent=(0, width, height, 0))
+    ax1.imshow(np.transpose(y_true), cmap=organ_cmap2, clim=(-0.5, 15.5), alpha=0.5, extent=(0, width, height, 0))
 
     ax2.imshow(np.transpose(x), cmap='gray', clim=(low, high), extent=(0, width, height, 0))
-    im2 = ax2.imshow(np.transpose(y_pred), cmap=organ_cmap, clim=(-0.5, 15.5), alpha=0.5, extent=(0, width, height, 0))
+    im2 = ax2.imshow(np.transpose(y_pred), cmap=organ_cmap2, clim=(-0.5, 15.5), alpha=0.5, extent=(0, width, height, 0))
 
     for ax in [ax1, ax2]:
         ax.set_xticks([])
