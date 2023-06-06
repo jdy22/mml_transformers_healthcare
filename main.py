@@ -23,7 +23,7 @@ from networks.unetr_2d import UNETR_2D
 from monai_research_contributions_main.UNETR.BTCV.optimizers.lr_scheduler import LinearWarmupCosineAnnealingLR
 from trainer import run_training
 from data_utils.data_loader import get_loader
-from data_utils.data_loader_2 import get_loader_2
+from data_utils.data_loader_2 import get_loader_2, get_loader_2_modality
 from data_utils.data_loader_3 import get_loader_3
 
 from monai.inferers import sliding_window_inference
@@ -259,11 +259,11 @@ if __name__ == "__main__":
     main()
     
     # args = parser.parse_args()
-    # args.test_mode = True
+    # args.test_mode = False
     # args.test_type = "validation"
     # args.data_dir = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/"
     # args.json_list = "dataset_small.json"
-    # loader = get_loader_2(args)
+    # loader = get_loader_2_modality(args)
 
     # train_loader=loader[0]
     # for idx, batch_data in enumerate(train_loader):
@@ -274,6 +274,7 @@ if __name__ == "__main__":
     #     print(idx)
     #     print(data.shape)
     #     print(target.shape)
+    #     print(data[0,0,0,0,1].item())
 
     # # Visualisation
     # from data_utils.visualise_data import display_2d_tensor, plot_intensity_histogram_from_tensor_ct_mri
