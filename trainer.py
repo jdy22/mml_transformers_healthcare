@@ -142,7 +142,7 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
             accs.append(avg_acc)
             if args.rank == 0:
                 print(
-                    "Val {}/{} {}/{}".format(epoch, args.max_epochs, idx, len(loader)),
+                    "Val {}/{} {}/{}".format(epoch, args.max_epochs, idx, len(loader_ct)+len(loader_mri)),
                     "acc",
                     avg_acc,
                     "time {:.2f}s".format(time.time() - start_time),
@@ -179,7 +179,7 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
             accs.append(avg_acc)
             if args.rank == 0:
                 print(
-                    "Val {}/{} {}/{}".format(epoch, args.max_epochs, idx, len(loader)),
+                    "Val {}/{} {}/{}".format(epoch, args.max_epochs, idx+len(loader_ct), len(loader_ct)+len(loader_mri)),
                     "acc",
                     avg_acc,
                     "time {:.2f}s".format(time.time() - start_time),
