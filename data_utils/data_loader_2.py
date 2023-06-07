@@ -234,260 +234,271 @@ def get_loader_2(args):
         val_files_mri = load_decathlon_datalist(datalist_json, True, "internal-validation-mri", base_dir=data_dir)
         val_ds_ct = data.Dataset(data=val_files_ct, transform=val_transform_ct)
         val_ds_mri = data.Dataset(data=val_files_mri, transform=val_transform_mri)
-        val_ds_full = torch.utils.data.ConcatDataset([val_ds_ct, val_ds_mri])
-        val_sampler = Sampler(val_ds_full, shuffle=False) if args.distributed else None
-        val_loader = data.DataLoader(
-            val_ds_full,
+        # val_ds_full = torch.utils.data.ConcatDataset([val_ds_ct, val_ds_mri])
+        val_sampler_ct = Sampler(val_ds_ct, shuffle=False) if args.distributed else None
+        val_sampler_mri = Sampler(val_ds_mri, shuffle=False) if args.distributed else None
+        val_loader_ct = data.DataLoader(
+            val_ds_ct,
             batch_size=1,
             shuffle=False,
             num_workers=args.workers,
-            sampler=val_sampler,
+            sampler=val_sampler_ct,
             pin_memory=True,
             persistent_workers=True,
         )
+        val_loader_mri = data.DataLoader(
+            val_ds_mri,
+            batch_size=1,
+            shuffle=False,
+            num_workers=args.workers,
+            sampler=val_sampler_mri,
+            pin_memory=True,
+            persistent_workers=True,
+        )
+        val_loader = [val_loader_ct, val_loader_mri]
         loader = [train_loader, val_loader]
 
     return loader
 
 
-def add_CT_info(x):
-    return torch.cat((x, torch.zeros_like(x)), dim=-1)
+# def add_CT_info(x):
+#     return torch.cat((x, torch.zeros_like(x)), dim=-1)
 
 
-def add_MRI_info(x):
-    return torch.cat((x, torch.ones_like(x)), dim=-1)
+# def add_MRI_info(x):
+#     return torch.cat((x, torch.ones_like(x)), dim=-1)
 
 
-def get_loader_2_modality(args):
-    data_dir = args.data_dir
-    # datalist_json = os.path.join(data_dir, args.json_list)
-    datalist_json = args.json_list
+# def get_loader_2_modality(args):
+#     data_dir = args.data_dir
+#     # datalist_json = os.path.join(data_dir, args.json_list)
+#     datalist_json = args.json_list
 
-    if args.train_sampling == "uniform":
-        train_crop_ratios = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    elif args.train_sampling == "unbalanced":
-        train_crop_ratios = [1, 1, 1, 1, 2, 2, 1, 2, 1, 2, 2, 2, 2, 2, 2, 2]
+#     if args.train_sampling == "uniform":
+#         train_crop_ratios = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+#     elif args.train_sampling == "unbalanced":
+#         train_crop_ratios = [1, 1, 1, 1, 2, 2, 1, 2, 1, 2, 2, 2, 2, 2, 2, 2]
 
-    if args.data_augmentation:
-        train_transform_ct = transforms.Compose(
-            [
-                transforms.LoadImaged(keys=["image", "label"]),
-                transforms.AddChanneld(keys=["image", "label"]),
-                transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
-                transforms.Spacingd(
-                    keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
-                ),
-                transforms.ThresholdIntensityd(keys=["image"], threshold=-991, above=True, cval=-991),
-                transforms.ThresholdIntensityd(keys=["image"], threshold=362, above=False, cval=362),
-                transforms.NormalizeIntensityd(keys=["image"], subtrahend=50, divisor=141),
-                transforms.RandCropByLabelClassesd(
-                    keys=["image", "label"],
-                    label_key="label",
-                    spatial_size=(args.roi_x, args.roi_y, args.roi_z),
-                    ratios=train_crop_ratios,
-                    num_classes=16,
-                    num_samples=args.train_samples,
-                ),
-                transforms.RandRotated(keys=["image", "label"], range_x=0.52, prob=0.2, mode=("bilinear", "nearest")),
-                transforms.RandScaleIntensityd(keys=["image"], factors=(-0.3, 0.4), prob=0.2),
-                transforms.RandGaussianNoised(keys=["image"], prob=0.1, mean=0.0, std=0.1),
-                transforms.RandAdjustContrastd(keys=["image"], prob=0.15, gamma=(0.75, 1.5)),
-                transforms.SqueezeDimd(keys=["label"], dim=-1),
-                transforms.ToTensord(keys=["image", "label"]),
-                transforms.Lambdad(keys=["image"], func=add_CT_info),
-            ]
-        )
-        train_transform_mri = transforms.Compose(
-            [
-                transforms.LoadImaged(keys=["image", "label"]),
-                transforms.AddChanneld(keys=["image", "label"]),
-                transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
-                transforms.Spacingd(
-                    keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
-                ),
-                transforms.NormalizeIntensityd(keys=["image"]),
-                transforms.RandCropByLabelClassesd(
-                    keys=["image", "label"],
-                    label_key="label",
-                    spatial_size=(args.roi_x, args.roi_y, args.roi_z),
-                    ratios=train_crop_ratios,
-                    num_classes=16,
-                    num_samples=args.train_samples,
-                ),
-                transforms.RandRotated(keys=["image", "label"], range_x=0.52, prob=0.2, mode=("bilinear", "nearest")),
-                transforms.RandScaleIntensityd(keys=["image"], factors=(-0.3, 0.4), prob=0.2),
-                transforms.RandGaussianNoised(keys=["image"], prob=0.1, mean=0.0, std=0.1),
-                transforms.RandAdjustContrastd(keys=["image"], prob=0.15, gamma=(0.75, 1.5)),
-                transforms.SqueezeDimd(keys=["label"], dim=-1),
-                transforms.ToTensord(keys=["image", "label"]),
-                transforms.Lambdad(keys=["image"], func=add_MRI_info),
-            ]
-        )
-    else:
-        train_transform_ct = transforms.Compose(
-            [
-                transforms.LoadImaged(keys=["image", "label"]),
-                transforms.AddChanneld(keys=["image", "label"]),
-                transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
-                transforms.Spacingd(
-                    keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
-                ),
-                transforms.ThresholdIntensityd(keys=["image"], threshold=-991, above=True, cval=-991),
-                transforms.ThresholdIntensityd(keys=["image"], threshold=362, above=False, cval=362),
-                transforms.NormalizeIntensityd(keys=["image"], subtrahend=50, divisor=141),
-                transforms.RandCropByLabelClassesd(
-                    keys=["image", "label"],
-                    label_key="label",
-                    spatial_size=(args.roi_x, args.roi_y, args.roi_z),
-                    ratios=train_crop_ratios,
-                    num_classes=16,
-                    num_samples=args.train_samples,
-                ),
-                transforms.SqueezeDimd(keys=["label"], dim=-1),
-                transforms.ToTensord(keys=["image", "label"]),
-                transforms.Lambdad(keys=["image"], func=add_CT_info),
-            ]
-        )
-        train_transform_mri = transforms.Compose(
-            [
-                transforms.LoadImaged(keys=["image", "label"]),
-                transforms.AddChanneld(keys=["image", "label"]),
-                transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
-                transforms.Spacingd(
-                    keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
-                ),
-                transforms.NormalizeIntensityd(keys=["image"]),
-                transforms.RandCropByLabelClassesd(
-                    keys=["image", "label"],
-                    label_key="label",
-                    spatial_size=(args.roi_x, args.roi_y, args.roi_z),
-                    ratios=train_crop_ratios,
-                    num_classes=16,
-                    num_samples=args.train_samples,
-                ),
-                transforms.SqueezeDimd(keys=["label"], dim=-1),
-                transforms.ToTensord(keys=["image", "label"]),
-                transforms.Lambdad(keys=["image"], func=add_MRI_info),
-            ]
-        )
-    val_transform_ct = transforms.Compose(
-        [
-            transforms.LoadImaged(keys=["image", "label"]),
-            transforms.AddChanneld(keys=["image", "label"]),
-            transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
-            transforms.Spacingd(
-                keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
-            ),
-            transforms.ThresholdIntensityd(keys=["image"], threshold=-991, above=True, cval=-991),
-            transforms.ThresholdIntensityd(keys=["image"], threshold=362, above=False, cval=362),
-            transforms.NormalizeIntensityd(keys=["image"], subtrahend=50, divisor=141),
-            transforms.RandCropByLabelClassesd(
-                keys=["image", "label"],
-                label_key="label",
-                spatial_size=(-1, -1, 1),
-                ratios=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                num_classes=16,
-                num_samples=args.val_samples,
-            ),
-            transforms.SqueezeDimd(keys=["label"], dim=-1),
-            transforms.ToTensord(keys=["image", "label"]),
-            transforms.Lambdad(keys=["image"], func=add_CT_info),
-        ]
-    )
-    val_transform_mri = transforms.Compose(
-        [
-            transforms.LoadImaged(keys=["image", "label"]),
-            transforms.AddChanneld(keys=["image", "label"]),
-            transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
-            transforms.Spacingd(
-                keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
-            ),
-            transforms.NormalizeIntensityd(keys=["image"]),
-            transforms.RandCropByLabelClassesd(
-                keys=["image", "label"],
-                label_key="label",
-                spatial_size=(-1, -1, 1),
-                ratios=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                num_classes=16,
-                num_samples=args.val_samples,
-            ),
-            transforms.SqueezeDimd(keys=["label"], dim=-1),
-            transforms.ToTensord(keys=["image", "label"]),
-            transforms.Lambdad(keys=["image"], func=add_MRI_info),
-        ]
-    )
+#     if args.data_augmentation:
+#         train_transform_ct = transforms.Compose(
+#             [
+#                 transforms.LoadImaged(keys=["image", "label"]),
+#                 transforms.AddChanneld(keys=["image", "label"]),
+#                 transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
+#                 transforms.Spacingd(
+#                     keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
+#                 ),
+#                 transforms.ThresholdIntensityd(keys=["image"], threshold=-991, above=True, cval=-991),
+#                 transforms.ThresholdIntensityd(keys=["image"], threshold=362, above=False, cval=362),
+#                 transforms.NormalizeIntensityd(keys=["image"], subtrahend=50, divisor=141),
+#                 transforms.RandCropByLabelClassesd(
+#                     keys=["image", "label"],
+#                     label_key="label",
+#                     spatial_size=(args.roi_x, args.roi_y, args.roi_z),
+#                     ratios=train_crop_ratios,
+#                     num_classes=16,
+#                     num_samples=args.train_samples,
+#                 ),
+#                 transforms.RandRotated(keys=["image", "label"], range_x=0.52, prob=0.2, mode=("bilinear", "nearest")),
+#                 transforms.RandScaleIntensityd(keys=["image"], factors=(-0.3, 0.4), prob=0.2),
+#                 transforms.RandGaussianNoised(keys=["image"], prob=0.1, mean=0.0, std=0.1),
+#                 transforms.RandAdjustContrastd(keys=["image"], prob=0.15, gamma=(0.75, 1.5)),
+#                 transforms.SqueezeDimd(keys=["label"], dim=-1),
+#                 transforms.ToTensord(keys=["image", "label"]),
+#                 transforms.Lambdad(keys=["image"], func=add_CT_info),
+#             ]
+#         )
+#         train_transform_mri = transforms.Compose(
+#             [
+#                 transforms.LoadImaged(keys=["image", "label"]),
+#                 transforms.AddChanneld(keys=["image", "label"]),
+#                 transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
+#                 transforms.Spacingd(
+#                     keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
+#                 ),
+#                 transforms.NormalizeIntensityd(keys=["image"]),
+#                 transforms.RandCropByLabelClassesd(
+#                     keys=["image", "label"],
+#                     label_key="label",
+#                     spatial_size=(args.roi_x, args.roi_y, args.roi_z),
+#                     ratios=train_crop_ratios,
+#                     num_classes=16,
+#                     num_samples=args.train_samples,
+#                 ),
+#                 transforms.RandRotated(keys=["image", "label"], range_x=0.52, prob=0.2, mode=("bilinear", "nearest")),
+#                 transforms.RandScaleIntensityd(keys=["image"], factors=(-0.3, 0.4), prob=0.2),
+#                 transforms.RandGaussianNoised(keys=["image"], prob=0.1, mean=0.0, std=0.1),
+#                 transforms.RandAdjustContrastd(keys=["image"], prob=0.15, gamma=(0.75, 1.5)),
+#                 transforms.SqueezeDimd(keys=["label"], dim=-1),
+#                 transforms.ToTensord(keys=["image", "label"]),
+#                 transforms.Lambdad(keys=["image"], func=add_MRI_info),
+#             ]
+#         )
+#     else:
+#         train_transform_ct = transforms.Compose(
+#             [
+#                 transforms.LoadImaged(keys=["image", "label"]),
+#                 transforms.AddChanneld(keys=["image", "label"]),
+#                 transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
+#                 transforms.Spacingd(
+#                     keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
+#                 ),
+#                 transforms.ThresholdIntensityd(keys=["image"], threshold=-991, above=True, cval=-991),
+#                 transforms.ThresholdIntensityd(keys=["image"], threshold=362, above=False, cval=362),
+#                 transforms.NormalizeIntensityd(keys=["image"], subtrahend=50, divisor=141),
+#                 transforms.RandCropByLabelClassesd(
+#                     keys=["image", "label"],
+#                     label_key="label",
+#                     spatial_size=(args.roi_x, args.roi_y, args.roi_z),
+#                     ratios=train_crop_ratios,
+#                     num_classes=16,
+#                     num_samples=args.train_samples,
+#                 ),
+#                 transforms.SqueezeDimd(keys=["label"], dim=-1),
+#                 transforms.ToTensord(keys=["image", "label"]),
+#                 transforms.Lambdad(keys=["image"], func=add_CT_info),
+#             ]
+#         )
+#         train_transform_mri = transforms.Compose(
+#             [
+#                 transforms.LoadImaged(keys=["image", "label"]),
+#                 transforms.AddChanneld(keys=["image", "label"]),
+#                 transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
+#                 transforms.Spacingd(
+#                     keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
+#                 ),
+#                 transforms.NormalizeIntensityd(keys=["image"]),
+#                 transforms.RandCropByLabelClassesd(
+#                     keys=["image", "label"],
+#                     label_key="label",
+#                     spatial_size=(args.roi_x, args.roi_y, args.roi_z),
+#                     ratios=train_crop_ratios,
+#                     num_classes=16,
+#                     num_samples=args.train_samples,
+#                 ),
+#                 transforms.SqueezeDimd(keys=["label"], dim=-1),
+#                 transforms.ToTensord(keys=["image", "label"]),
+#                 transforms.Lambdad(keys=["image"], func=add_MRI_info),
+#             ]
+#         )
+#     val_transform_ct = transforms.Compose(
+#         [
+#             transforms.LoadImaged(keys=["image", "label"]),
+#             transforms.AddChanneld(keys=["image", "label"]),
+#             transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
+#             transforms.Spacingd(
+#                 keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
+#             ),
+#             transforms.ThresholdIntensityd(keys=["image"], threshold=-991, above=True, cval=-991),
+#             transforms.ThresholdIntensityd(keys=["image"], threshold=362, above=False, cval=362),
+#             transforms.NormalizeIntensityd(keys=["image"], subtrahend=50, divisor=141),
+#             transforms.RandCropByLabelClassesd(
+#                 keys=["image", "label"],
+#                 label_key="label",
+#                 spatial_size=(-1, -1, 1),
+#                 ratios=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+#                 num_classes=16,
+#                 num_samples=args.val_samples,
+#             ),
+#             transforms.SqueezeDimd(keys=["label"], dim=-1),
+#             transforms.ToTensord(keys=["image", "label"]),
+#             transforms.Lambdad(keys=["image"], func=add_CT_info),
+#         ]
+#     )
+#     val_transform_mri = transforms.Compose(
+#         [
+#             transforms.LoadImaged(keys=["image", "label"]),
+#             transforms.AddChanneld(keys=["image", "label"]),
+#             transforms.Orientationd(keys=["image", "label"], axcodes="RAS"),
+#             transforms.Spacingd(
+#                 keys=["image", "label"], pixdim=(args.space_x, args.space_y, args.space_z), mode=("bilinear", "nearest")
+#             ),
+#             transforms.NormalizeIntensityd(keys=["image"]),
+#             transforms.RandCropByLabelClassesd(
+#                 keys=["image", "label"],
+#                 label_key="label",
+#                 spatial_size=(-1, -1, 1),
+#                 ratios=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+#                 num_classes=16,
+#                 num_samples=args.val_samples,
+#             ),
+#             transforms.SqueezeDimd(keys=["label"], dim=-1),
+#             transforms.ToTensord(keys=["image", "label"]),
+#             transforms.Lambdad(keys=["image"], func=add_MRI_info),
+#         ]
+#     )
     
-    if args.test_mode:
-        if args.test_type == "validation":
-            test_files_ct = load_decathlon_datalist(datalist_json, True, "internal-validation-ct", base_dir=data_dir)
-        elif args.test_type == "test":
-            test_files_ct = load_decathlon_datalist(datalist_json, True, "validation-ct", base_dir=data_dir)
-        test_ds_ct = data.Dataset(data=test_files_ct, transform=val_transform_ct)
-        test_sampler_ct = Sampler(test_ds_ct, shuffle=False) if args.distributed else None
-        test_loader_ct = data.DataLoader(
-            test_ds_ct,
-            batch_size=1,
-            shuffle=False,
-            num_workers=args.workers,
-            sampler=test_sampler_ct,
-            pin_memory=True,
-            persistent_workers=True,
-        )
-        if args.test_type == "validation":
-            test_files_mri = load_decathlon_datalist(datalist_json, True, "internal-validation-mri", base_dir=data_dir)
-        elif args.test_type == "test":
-            test_files_mri = load_decathlon_datalist(datalist_json, True, "validation-mri", base_dir=data_dir)
-        test_ds_mri = data.Dataset(data=test_files_mri, transform=val_transform_mri)
-        test_sampler_mri = Sampler(test_ds_mri, shuffle=False) if args.distributed else None
-        test_loader_mri = data.DataLoader(
-            test_ds_mri,
-            batch_size=1,
-            shuffle=False,
-            num_workers=args.workers,
-            sampler=test_sampler_mri,
-            pin_memory=True,
-            persistent_workers=True,
-        )
-        loader = [test_loader_ct, test_loader_mri]
-    else:
-        train_files_ct = load_decathlon_datalist(datalist_json, True, "training-ct", base_dir=data_dir)
-        train_files_mri = load_decathlon_datalist(datalist_json, True, "training-mri", base_dir=data_dir)
-        if args.use_normal_dataset:
-            train_ds_ct = data.Dataset(data=train_files_ct, transform=train_transform_ct)
-            train_ds_mri = data.Dataset(data=train_files_mri, transform=train_transform_mri)
-        else:
-            train_ds_ct = data.CacheDataset(
-                data=train_files_ct, transform=train_transform_ct, cache_num=24, cache_rate=1.0, num_workers=args.workers
-            )
-            train_ds_mri = data.CacheDataset(
-                data=train_files_mri, transform=train_transform_mri, cache_num=24, cache_rate=1.0, num_workers=args.workers
-            )
-        train_ds_full = torch.utils.data.ConcatDataset([train_ds_ct, train_ds_mri])
-        train_sampler = Sampler(train_ds_full) if args.distributed else None
-        train_loader = data.DataLoader(
-            train_ds_full,
-            batch_size=args.batch_size,
-            shuffle=(train_sampler is None),
-            num_workers=args.workers,
-            sampler=train_sampler,
-            pin_memory=True,
-            persistent_workers=True,
-        )
-        val_files_ct = load_decathlon_datalist(datalist_json, True, "internal-validation-ct", base_dir=data_dir)
-        val_files_mri = load_decathlon_datalist(datalist_json, True, "internal-validation-mri", base_dir=data_dir)
-        val_ds_ct = data.Dataset(data=val_files_ct, transform=val_transform_ct)
-        val_ds_mri = data.Dataset(data=val_files_mri, transform=val_transform_mri)
-        val_ds_full = torch.utils.data.ConcatDataset([val_ds_ct, val_ds_mri])
-        val_sampler = Sampler(val_ds_full, shuffle=False) if args.distributed else None
-        val_loader = data.DataLoader(
-            val_ds_full,
-            batch_size=1,
-            shuffle=False,
-            num_workers=args.workers,
-            sampler=val_sampler,
-            pin_memory=True,
-            persistent_workers=True,
-        )
-        loader = [train_loader, val_loader]
+#     if args.test_mode:
+#         if args.test_type == "validation":
+#             test_files_ct = load_decathlon_datalist(datalist_json, True, "internal-validation-ct", base_dir=data_dir)
+#         elif args.test_type == "test":
+#             test_files_ct = load_decathlon_datalist(datalist_json, True, "validation-ct", base_dir=data_dir)
+#         test_ds_ct = data.Dataset(data=test_files_ct, transform=val_transform_ct)
+#         test_sampler_ct = Sampler(test_ds_ct, shuffle=False) if args.distributed else None
+#         test_loader_ct = data.DataLoader(
+#             test_ds_ct,
+#             batch_size=1,
+#             shuffle=False,
+#             num_workers=args.workers,
+#             sampler=test_sampler_ct,
+#             pin_memory=True,
+#             persistent_workers=True,
+#         )
+#         if args.test_type == "validation":
+#             test_files_mri = load_decathlon_datalist(datalist_json, True, "internal-validation-mri", base_dir=data_dir)
+#         elif args.test_type == "test":
+#             test_files_mri = load_decathlon_datalist(datalist_json, True, "validation-mri", base_dir=data_dir)
+#         test_ds_mri = data.Dataset(data=test_files_mri, transform=val_transform_mri)
+#         test_sampler_mri = Sampler(test_ds_mri, shuffle=False) if args.distributed else None
+#         test_loader_mri = data.DataLoader(
+#             test_ds_mri,
+#             batch_size=1,
+#             shuffle=False,
+#             num_workers=args.workers,
+#             sampler=test_sampler_mri,
+#             pin_memory=True,
+#             persistent_workers=True,
+#         )
+#         loader = [test_loader_ct, test_loader_mri]
+#     else:
+#         train_files_ct = load_decathlon_datalist(datalist_json, True, "training-ct", base_dir=data_dir)
+#         train_files_mri = load_decathlon_datalist(datalist_json, True, "training-mri", base_dir=data_dir)
+#         if args.use_normal_dataset:
+#             train_ds_ct = data.Dataset(data=train_files_ct, transform=train_transform_ct)
+#             train_ds_mri = data.Dataset(data=train_files_mri, transform=train_transform_mri)
+#         else:
+#             train_ds_ct = data.CacheDataset(
+#                 data=train_files_ct, transform=train_transform_ct, cache_num=24, cache_rate=1.0, num_workers=args.workers
+#             )
+#             train_ds_mri = data.CacheDataset(
+#                 data=train_files_mri, transform=train_transform_mri, cache_num=24, cache_rate=1.0, num_workers=args.workers
+#             )
+#         train_ds_full = torch.utils.data.ConcatDataset([train_ds_ct, train_ds_mri])
+#         train_sampler = Sampler(train_ds_full) if args.distributed else None
+#         train_loader = data.DataLoader(
+#             train_ds_full,
+#             batch_size=args.batch_size,
+#             shuffle=(train_sampler is None),
+#             num_workers=args.workers,
+#             sampler=train_sampler,
+#             pin_memory=True,
+#             persistent_workers=True,
+#         )
+#         val_files_ct = load_decathlon_datalist(datalist_json, True, "internal-validation-ct", base_dir=data_dir)
+#         val_files_mri = load_decathlon_datalist(datalist_json, True, "internal-validation-mri", base_dir=data_dir)
+#         val_ds_ct = data.Dataset(data=val_files_ct, transform=val_transform_ct)
+#         val_ds_mri = data.Dataset(data=val_files_mri, transform=val_transform_mri)
+#         val_ds_full = torch.utils.data.ConcatDataset([val_ds_ct, val_ds_mri])
+#         val_sampler = Sampler(val_ds_full, shuffle=False) if args.distributed else None
+#         val_loader = data.DataLoader(
+#             val_ds_full,
+#             batch_size=1,
+#             shuffle=False,
+#             num_workers=args.workers,
+#             sampler=val_sampler,
+#             pin_memory=True,
+#             persistent_workers=True,
+#         )
+#         loader = [train_loader, val_loader]
 
-    return loader
+#     return loader
