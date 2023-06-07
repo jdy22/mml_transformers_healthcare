@@ -90,22 +90,37 @@ class ViT_modality(nn.Module):
         self.CT_token = nn.Parameter(torch.zeros(1, 1, hidden_size))
         self.MRI_token = nn.Parameter(torch.zeros(1, 1, hidden_size))
 
-    def forward(self, x, modality):
+    def forward(self, x, modality, mode):
         # Options for modality: "CT" or "MRI"
+        # Options for mode: "concat" or "add"
         x = self.patch_embedding(x)
-        if modality == "CT":
-            modality_token = self.CT_token.expand(x.shape[0], -1, -1)
-        elif modality == "MRI":
-            modality_token = self.MRI_token.expand(x.shape[0], -1, -1)
-        x_full = torch.cat((x, modality_token), dim=1)
+        if mode == "concat":
+            if modality == "CT":
+                modality_token = self.CT_token.expand(x.shape[0], -1, -1)
+            elif modality == "MRI":
+                modality_token = self.MRI_token.expand(x.shape[0], -1, -1)
+            x_full = torch.cat((x, modality_token), dim=1)
+        elif mode == "add":
+            if modality == "CT":
+                modality_token = self.CT_token.expand(x.shape[0], x.shape[1], -1)
+            elif modality == "MRI":
+                modality_token = self.MRI_token.expand(x.shape[0], x.shape[1], -1)
+            x_full = x + modality_token
  
         hidden_states_out = []
         for blk in self.blocks:
             x_full = blk(x_full)
-            hidden_states_out.append(x_full[:, :-1, :])
+            if mode == "concat":
+                hidden_states_out.append(x_full[:, :-1, :])
+            elif mode == "add":
+                hidden_states_out.append(x_full)
         x_full = self.norm(x_full)
-        x_out = x_full[:, :-1, :]
-        modality_out = x_full[:, -1, :]
+        if mode == "concat":
+            x_out = x_full[:, :-1, :]
+            modality_out = x_full[:, -1, :]
+        elif mode == "add":
+            x_out = x_full
+            modality_out = None
 
         return x_out, hidden_states_out, modality_out
 
@@ -274,8 +289,8 @@ class UNETR_2D_modality(nn.Module):
         x = x.permute(0, 3, 1, 2).contiguous()
         return x
 
-    def forward(self, x_in, modality):
-        x, hidden_states_out, modality_out = self.vit(x_in, modality)
+    def forward(self, x_in, modality, mode):
+        x, hidden_states_out, modality_out = self.vit(x_in, modality, mode)
         enc1 = self.encoder1(x_in)
         x2 = hidden_states_out[3]
         enc2 = self.encoder2(self.proj_feat(x2, self.hidden_size, self.feat_size))
@@ -309,5 +324,5 @@ if __name__ == "__main__":
     )
 
     x = torch.zeros((40, 1, 112, 112))
-    logits = model(x, "CT")
+    logits = model(x, modality="CT", mode="add")
     print(logits.shape)

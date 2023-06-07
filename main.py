@@ -35,7 +35,7 @@ from monai.utils.enums import MetricReduction
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument("--checkpoint", default=None, help="start training from saved checkpoint")
-parser.add_argument("--logdir", default="run1", type=str, help="directory to save the tensorboard logs")
+parser.add_argument("--logdir", default="run2", type=str, help="directory to save the tensorboard logs")
 parser.add_argument(
     "--pretrained_dir", default=None, type=str, help="pretrained checkpoint directory"
 )
@@ -101,7 +101,7 @@ parser.add_argument("--val_samples", default=20, type=int, help="number of sampl
 parser.add_argument("--train_sampling", default="uniform", type=str, help="sampling distribution of organs during training")
 parser.add_argument("--preprocessing", default=2, type=int, help="preprocessing option")
 parser.add_argument("--data_augmentation", action="store_false", help="use data augmentation during training")
-parser.add_argument("--additional_information", default="modality_concat", help="additional information provided to segmentation model")
+parser.add_argument("--additional_information", default="modality_add", help="additional information provided to segmentation model")
 
 
 def main():
@@ -143,7 +143,7 @@ def main_worker(gpu, args):
     inf_size = [args.roi_x, args.roi_y]
     pretrained_dir = args.pretrained_dir
     if (args.model_name is None) or args.model_name == "unetr":
-        if args.additional_information == "modality_concat":
+        if args.additional_information == "modality_concat" or args.additional_information == "modality_add":
             model = UNETR_2D_modality(
                 in_channels=args.in_channels,
                 out_channels=args.out_channels,
@@ -201,6 +201,7 @@ def main_worker(gpu, args):
             predictor=model,
             overlap=args.infer_overlap,
             modality="CT",
+            mode="concat",
         )
         model_inferer_MRI = partial(
             sliding_window_inference,
@@ -209,6 +210,27 @@ def main_worker(gpu, args):
             predictor=model,
             overlap=args.infer_overlap,
             modality="MRI",
+            mode="concat",
+        )
+        model_inferer = [model_inferer_CT, model_inferer_MRI]
+    elif args.additional_information == "modality_add":
+        model_inferer_CT = partial(
+            sliding_window_inference,
+            roi_size=inf_size,
+            sw_batch_size=args.sw_batch_size,
+            predictor=model,
+            overlap=args.infer_overlap,
+            modality="CT",
+            mode="add",
+        )
+        model_inferer_MRI = partial(
+            sliding_window_inference,
+            roi_size=inf_size,
+            sw_batch_size=args.sw_batch_size,
+            predictor=model,
+            overlap=args.infer_overlap,
+            modality="MRI",
+            mode="add",
         )
         model_inferer = [model_inferer_CT, model_inferer_MRI]
     else:

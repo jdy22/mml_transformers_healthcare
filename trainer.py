@@ -66,13 +66,15 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args):
         for param in model.parameters():
             param.grad = None
         with autocast(enabled=args.amp):
+            image_index = int(filename[-10:-7])
+            if image_index < 500:
+                modality = "CT"
+            else:
+                modality = "MRI"
             if args.additional_information == "modality_concat":
-                image_index = int(filename[-10:-7])
-                if image_index < 500:
-                    modality = "CT"
-                else:
-                    modality = "MRI"
-                logits = model(data, modality)
+                logits = model(data, modality, mode="concat")
+            elif args.additional_information == "modality_add":
+                logits = model(data, modality, mode="add")
             else:
                 logits = model(data)
             loss = loss_func(logits, target)
@@ -119,7 +121,7 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
             data, target = data.cuda(args.rank), target.cuda(args.rank)
             with autocast(enabled=args.amp):
                 if model_inferer is not None:
-                    if args.additional_information == "modality_concat":
+                    if args.additional_information == "modality_concat" or args.additional_information == "modality_add":
                         logits = model_inferer[0](data)
                     else:
                         logits = model_inferer(data)
@@ -156,7 +158,7 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
             data, target = data.cuda(args.rank), target.cuda(args.rank)
             with autocast(enabled=args.amp):
                 if model_inferer is not None:
-                    if args.additional_information == "modality_concat":
+                    if args.additional_information == "modality_concat" or args.additional_information == "modality_add":
                         logits = model_inferer[1](data)
                     else:
                         logits = model_inferer(data)
