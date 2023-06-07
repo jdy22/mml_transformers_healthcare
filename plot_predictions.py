@@ -15,6 +15,7 @@ import os
 import numpy as np
 import torch
 from networks.unetr_2d import UNETR_2D
+from networks.unetr_2d_modality import UNETR_2D_modality
 from data_utils.data_loader import get_loader
 from data_utils.data_loader_2 import get_loader_2
 from data_utils.data_loader_3 import get_loader_3
@@ -24,7 +25,7 @@ from monai.inferers import sliding_window_inference
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument(
-    "--pretrained_dir", default="./runs/run18/", type=str, help="pretrained checkpoint directory"
+    "--pretrained_dir", default="./runs_modality/run1/", type=str, help="pretrained checkpoint directory"
 )
 parser.add_argument("--data_dir", default="./amos22/", type=str, help="dataset directory")
 parser.add_argument("--json_list", default="dataset_internal_val.json", type=str, help="dataset json file")
@@ -69,13 +70,19 @@ parser.add_argument("--val_samples", default=20, type=int, help="number of sampl
 parser.add_argument("--train_sampling", default="uniform", type=str, help="sampling distribution of organs during training")
 parser.add_argument("--preprocessing", default=2, type=int, help="preprocessing option")
 parser.add_argument("--data_augmentation", action="store_false", help="use data augmentation during training")
+parser.add_argument("--additional_information", default="modality_concat", help="additional information provided to segmentation model")
 
 
 def visualise_predictions(args, model, loader, modality, image_index, num_samples):
     for idx, batch in enumerate(loader):
         if idx == image_index:
             val_inputs, val_labels = (batch["image"].cuda(), batch["label"].cuda())
-            val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap)
+            if args.additional_information == "modality_concat":
+                val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="concat")
+            elif args.additional_information == "modality_add":
+                val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="add")
+            else:
+                val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap)
             val_outputs = torch.softmax(val_outputs, 1).cpu().numpy()
             val_outputs = np.argmax(val_outputs, axis=1, keepdims=True).astype(np.uint8)
             val_labels = val_labels.cpu().numpy()
@@ -105,20 +112,36 @@ def main():
     if args.saved_checkpoint == "torchscript":
         model = torch.jit.load(pretrained_pth)
     elif args.saved_checkpoint == "ckpt":
-        model = UNETR_2D(
-            in_channels=args.in_channels,
-            out_channels=args.out_channels,
-            img_size=(args.roi_x, args.roi_y),
-            feature_size=args.feature_size,
-            hidden_size=args.hidden_size,
-            mlp_dim=args.mlp_dim,
-            num_heads=args.num_heads,
-            pos_embed=args.pos_embed,
-            norm_name=args.norm_name,
-            conv_block=True,
-            res_block=True,
-            dropout_rate=args.dropout_rate,
-        )
+        if args.additional_information == "modality_concat" or args.additional_information == "modality_add":
+            model = UNETR_2D_modality(
+                in_channels=args.in_channels,
+                out_channels=args.out_channels,
+                img_size=(args.roi_x, args.roi_y),
+                feature_size=args.feature_size,
+                hidden_size=args.hidden_size,
+                mlp_dim=args.mlp_dim,
+                num_heads=args.num_heads,
+                pos_embed=args.pos_embed,
+                norm_name=args.norm_name,
+                conv_block=True,
+                res_block=True,
+                dropout_rate=args.dropout_rate,
+            )
+        else:
+            model = UNETR_2D(
+                in_channels=args.in_channels,
+                out_channels=args.out_channels,
+                img_size=(args.roi_x, args.roi_y),
+                feature_size=args.feature_size,
+                hidden_size=args.hidden_size,
+                mlp_dim=args.mlp_dim,
+                num_heads=args.num_heads,
+                pos_embed=args.pos_embed,
+                norm_name=args.norm_name,
+                conv_block=True,
+                res_block=True,
+                dropout_rate=args.dropout_rate,
+            )
         model_dict = torch.load(pretrained_pth)
         model.load_state_dict(model_dict["state_dict"])
     model.eval()

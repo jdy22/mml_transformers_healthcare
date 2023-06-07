@@ -15,6 +15,7 @@ import os
 import numpy as np
 import torch
 from networks.unetr_2d import UNETR_2D
+from networks.unetr_2d_modality import UNETR_2D_modality
 from trainer import dice
 from data_utils.data_loader import get_loader
 from data_utils.data_loader_2 import get_loader_2
@@ -25,7 +26,7 @@ from monai.metrics import compute_surface_dice, compute_hausdorff_distance
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument(
-    "--pretrained_dir", default="./runs/run18/", type=str, help="pretrained checkpoint directory"
+    "--pretrained_dir", default="./runs_modality/run1/", type=str, help="pretrained checkpoint directory"
 )
 parser.add_argument("--data_dir", default="./amos22/", type=str, help="dataset directory")
 parser.add_argument("--json_list", default="dataset_internal_val.json", type=str, help="dataset json file")
@@ -71,6 +72,7 @@ parser.add_argument("--train_sampling", default="uniform", type=str, help="sampl
 parser.add_argument("--preprocessing", default=2, type=int, help="preprocessing option")
 parser.add_argument("--data_augmentation", action="store_false", help="use data augmentation during training")
 parser.add_argument("--distance_metric", default="hausdorff", type=str, help="distance metric for evaluation - hausdorff or nsd")
+parser.add_argument("--additional_information", default="modality_concat", help="additional information provided to segmentation model")
 
 
 nsd_thresholds_mm = {
@@ -92,7 +94,7 @@ nsd_thresholds_mm = {
 }
 
 
-def calculate_dice_hausdorff(args, model, loader):
+def calculate_dice_hausdorff(args, model, loader, modality):
     dice_per_organ = {}
     hd_per_organ = {}
     counts_per_organ = {}
@@ -100,7 +102,12 @@ def calculate_dice_hausdorff(args, model, loader):
         val_inputs, val_labels = (batch["image"].cuda(), batch["label"].cuda())
         # img_name = batch["image_meta_dict"]["filename_or_obj"][0].split("/")[-1]
         # print("Inference on case {}".format(img_name))
-        val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap)
+        if args.additional_information == "modality_concat":
+            val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="concat")
+        elif args.additional_information == "modality_add":
+            val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="add")
+        else:
+            val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap)
         val_outputs = torch.softmax(val_outputs, 1).cpu().numpy()
         val_outputs = np.argmax(val_outputs, axis=1, keepdims=True).astype(np.uint8)
         val_labels = val_labels.cpu().numpy()
@@ -120,7 +127,7 @@ def calculate_dice_hausdorff(args, model, loader):
                 if np.isnan(hd_score) or np.isinf(hd_score):
                     counts_per_organ[organ][0] += 1
                 else:
-                    hd_per_organ.setdefault(organ, []).append(hd_score)
+                    hd_per_organ.setdefault(organ, []).append(hd_score*args.space_x)
         print("{}/{} validation images processed".format(idx+1, len(loader)))
     # Calculate mean score per organ and overall
     total_dice = 0
@@ -145,14 +152,19 @@ def calculate_dice_hausdorff(args, model, loader):
     return mean_dice, dice_per_organ, mean_hd, hd_per_organ, mean_count, counts_per_organ
 
 
-def calculate_dice_nsd(args, model, loader):
+def calculate_dice_nsd(args, model, loader, modality):
     dice_per_organ = {}
     nsd_per_organ = {}
     for idx, batch in enumerate(loader):
         val_inputs, val_labels = (batch["image"].cuda(), batch["label"].cuda())
         # img_name = batch["image_meta_dict"]["filename_or_obj"][0].split("/")[-1]
         # print("Inference on case {}".format(img_name))
-        val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap)
+        if args.additional_information == "modality_concat":
+            val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="concat")
+        elif args.additional_information == "modality_add":
+            val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="add")
+        else:
+            val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap)
         val_outputs = torch.softmax(val_outputs, 1).cpu().numpy()
         val_outputs = np.argmax(val_outputs, axis=1, keepdims=True).astype(np.uint8)
         val_labels = val_labels.cpu().numpy()
@@ -206,20 +218,36 @@ def main():
     if args.saved_checkpoint == "torchscript":
         model = torch.jit.load(pretrained_pth)
     elif args.saved_checkpoint == "ckpt":
-        model = UNETR_2D(
-            in_channels=args.in_channels,
-            out_channels=args.out_channels,
-            img_size=(args.roi_x, args.roi_y),
-            feature_size=args.feature_size,
-            hidden_size=args.hidden_size,
-            mlp_dim=args.mlp_dim,
-            num_heads=args.num_heads,
-            pos_embed=args.pos_embed,
-            norm_name=args.norm_name,
-            conv_block=True,
-            res_block=True,
-            dropout_rate=args.dropout_rate,
-        )
+        if args.additional_information == "modality_concat" or args.additional_information == "modality_add":
+            model = UNETR_2D_modality(
+                in_channels=args.in_channels,
+                out_channels=args.out_channels,
+                img_size=(args.roi_x, args.roi_y),
+                feature_size=args.feature_size,
+                hidden_size=args.hidden_size,
+                mlp_dim=args.mlp_dim,
+                num_heads=args.num_heads,
+                pos_embed=args.pos_embed,
+                norm_name=args.norm_name,
+                conv_block=True,
+                res_block=True,
+                dropout_rate=args.dropout_rate,
+            )
+        else:
+            model = UNETR_2D(
+                in_channels=args.in_channels,
+                out_channels=args.out_channels,
+                img_size=(args.roi_x, args.roi_y),
+                feature_size=args.feature_size,
+                hidden_size=args.hidden_size,
+                mlp_dim=args.mlp_dim,
+                num_heads=args.num_heads,
+                pos_embed=args.pos_embed,
+                norm_name=args.norm_name,
+                conv_block=True,
+                res_block=True,
+                dropout_rate=args.dropout_rate,
+            )
         model_dict = torch.load(pretrained_pth)
         model.load_state_dict(model_dict["state_dict"])
     model.eval()
@@ -227,8 +255,8 @@ def main():
 
     with torch.no_grad():
         if args.distance_metric == "hausdorff":
-            mean_dice_ct, mean_dice_per_organ_ct, mean_hd_ct, mean_hd_per_organ_ct, mean_count_ct, counts_per_organ_ct = calculate_dice_hausdorff(args, model, loader_ct)
-            mean_dice_mri, mean_dice_per_organ_mri, mean_hd_mri, mean_hd_per_organ_mri, mean_count_mri, counts_per_organ_mri = calculate_dice_hausdorff(args, model, loader_mri)
+            mean_dice_ct, mean_dice_per_organ_ct, mean_hd_ct, mean_hd_per_organ_ct, mean_count_ct, counts_per_organ_ct = calculate_dice_hausdorff(args, model, loader_ct, modality="CT")
+            mean_dice_mri, mean_dice_per_organ_mri, mean_hd_mri, mean_hd_per_organ_mri, mean_count_mri, counts_per_organ_mri = calculate_dice_hausdorff(args, model, loader_mri, modality="MRI")
             print("Final scores:")
             print(f"CT: mDice = {mean_dice_ct}, mHD95 = {mean_hd_ct}, missed predictions = {mean_count_ct}")
             print(f"MRI: mDice = {mean_dice_mri}, mHD95 = {mean_hd_mri}, missed predictions = {mean_count_mri}")
@@ -239,8 +267,8 @@ def main():
             print(mean_hd_per_organ_mri)
             print(counts_per_organ_mri)
         elif args.distance_metric == "nsd":
-            mean_dice_ct, mean_dice_per_organ_ct, mean_nsd_ct, mean_nsd_per_organ_ct = calculate_dice_nsd(args, model, loader_ct)
-            mean_dice_mri, mean_dice_per_organ_mri, mean_nsd_mri, mean_nsd_per_organ_mri = calculate_dice_nsd(args, model, loader_mri)
+            mean_dice_ct, mean_dice_per_organ_ct, mean_nsd_ct, mean_nsd_per_organ_ct = calculate_dice_nsd(args, model, loader_ct, modality="CT")
+            mean_dice_mri, mean_dice_per_organ_mri, mean_nsd_mri, mean_nsd_per_organ_mri = calculate_dice_nsd(args, model, loader_mri, modality="MRI")
             print("Final scores:")
             print(f"CT: mDice = {mean_dice_ct}, mNSD = {mean_nsd_ct}")
             print(f"MRI: mDice = {mean_dice_mri}, mNSD = {mean_nsd_mri}")
