@@ -72,9 +72,9 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args):
             else:
                 modality = "MRI"
             if args.additional_information == "modality_concat":
-                logits = model(data, modality, mode="concat")
+                logits = model(data, modality, info_mode="concat")
             elif args.additional_information == "modality_add":
-                logits = model(data, modality, mode="add")
+                logits = model(data, modality, info_mode="add")
             else:
                 logits = model(data)
             loss = loss_func(logits, target)

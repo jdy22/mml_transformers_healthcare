@@ -201,7 +201,7 @@ def main_worker(gpu, args):
             predictor=model,
             overlap=args.infer_overlap,
             modality="CT",
-            mode="concat",
+            info_mode="concat",
         )
         model_inferer_MRI = partial(
             sliding_window_inference,
@@ -210,7 +210,7 @@ def main_worker(gpu, args):
             predictor=model,
             overlap=args.infer_overlap,
             modality="MRI",
-            mode="concat",
+            info_mode="concat",
         )
         model_inferer = [model_inferer_CT, model_inferer_MRI]
     elif args.additional_information == "modality_add":
@@ -221,7 +221,7 @@ def main_worker(gpu, args):
             predictor=model,
             overlap=args.infer_overlap,
             modality="CT",
-            mode="add",
+            info_mode="add",
         )
         model_inferer_MRI = partial(
             sliding_window_inference,
@@ -230,7 +230,7 @@ def main_worker(gpu, args):
             predictor=model,
             overlap=args.infer_overlap,
             modality="MRI",
-            mode="add",
+            info_mode="add",
         )
         model_inferer = [model_inferer_CT, model_inferer_MRI]
     else:
