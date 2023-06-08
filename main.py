@@ -324,7 +324,7 @@ if __name__ == "__main__":
     # args.json_list = "dataset_small.json"
     # loader = get_loader_2(args)
 
-    # train_loader=loader[0]
+    # train_loader=loader[1][1]
     # for idx, batch_data in enumerate(train_loader):
     #     if isinstance(batch_data, list):
     #         data, target = batch_data
@@ -336,10 +336,9 @@ if __name__ == "__main__":
     #             print("CT")
     #         else:
     #             print("MRI")
-    #     print(idx)
-    #     print(data.shape)
-    #     print(target.shape)
-    #     print(data[0,0,0,0,1].item())
+        # print(idx)
+        # print(data.shape)
+        # print(target.shape)
 
     # # Visualisation
     # from data_utils.visualise_data import display_2d_tensor, plot_intensity_histogram_from_tensor_ct_mri
