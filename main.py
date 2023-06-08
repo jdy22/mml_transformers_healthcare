@@ -275,9 +275,12 @@ if __name__ == "__main__":
     resource.setrlimit(resource.RLIMIT_NOFILE, (2048, rlimit[1]))
 
     main()
+
+    # from monai.utils.misc import set_determinism
+    # set_determinism()
     
     # args = parser.parse_args()
-    # args.test_mode = False
+    # args.test_mode = True
     # args.test_type = "validation"
     # args.data_dir = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/"
     # args.json_list = "dataset_small.json"
@@ -311,8 +314,9 @@ if __name__ == "__main__":
     #     else:
     #         data_ct, target_ct = batch_data["image"], batch_data["label"]
     #     print(idx)
-    #     print(data_ct.shape)
-    #     print(target_ct.shape)
+    #     # print(data_ct.shape)
+    #     # print(target_ct.shape)
+    #     print(torch.unique(target_ct[0]))
 
     # val_loader_mri = loader[1]
     # for idx, batch_data in enumerate(val_loader_mri):
@@ -321,8 +325,9 @@ if __name__ == "__main__":
     #     else:
     #         data_mri, target_mri = batch_data["image"], batch_data["label"]
     #     print(idx)
-    #     print(data_mri.shape)
-    #     print(target_mri.shape)
+    #     # print(data_mri.shape)
+    #     # print(target_mri.shape)
+    #     print(torch.unique(target_mri[0]))
 
     # # Visualisation
     # image_ct = data_ct[0, 0, :, :]

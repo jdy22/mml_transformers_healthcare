@@ -23,6 +23,7 @@ from data_utils.visualise_data import plot_save_predictions
 
 from monai.inferers import sliding_window_inference
 
+
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument(
     "--pretrained_dir", default="./runs_modality/run1/", type=str, help="pretrained checkpoint directory"
@@ -156,5 +157,8 @@ if __name__ == "__main__":
     import resource
     rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
     resource.setrlimit(resource.RLIMIT_NOFILE, (2048, rlimit[1]))
+
+    from monai.utils.misc import set_determinism
+    set_determinism()
 
     main()
