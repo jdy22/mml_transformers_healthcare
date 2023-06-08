@@ -54,7 +54,7 @@
   "train_sampling": "uniform",
   "preprocessing": 2,
   "data_augmentation": true,
-  "additional_information": "modality_concat",
+  "additional_information": "modality_add",
   "amp": true,
   "gpu": 0,
   "test_mode": false
