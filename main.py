@@ -35,7 +35,7 @@ from monai.utils.enums import MetricReduction
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument("--checkpoint", default=None, help="start training from saved checkpoint")
-parser.add_argument("--logdir", default="run2", type=str, help="directory to save the tensorboard logs")
+parser.add_argument("--logdir", default="test", type=str, help="directory to save the tensorboard logs")
 parser.add_argument(
     "--pretrained_dir", default=None, type=str, help="pretrained checkpoint directory"
 )
@@ -53,7 +53,7 @@ parser.add_argument("--optim_name", default="adamw", type=str, help="optimizatio
 parser.add_argument("--reg_weight", default=1e-5, type=float, help="regularization weight")
 parser.add_argument("--momentum", default=0.99, type=float, help="momentum")
 parser.add_argument("--noamp", action="store_true", help="do NOT use amp for training")
-parser.add_argument("--val_every", default=20, type=int, help="validation frequency")
+parser.add_argument("--val_every", default=1, type=int, help="validation frequency")
 parser.add_argument("--distributed", action="store_true", help="start distributed training")
 parser.add_argument("--world_size", default=1, type=int, help="number of nodes for distributed training")
 parser.add_argument("--rank", default=0, type=int, help="node rank for distributed training")
@@ -193,54 +193,13 @@ def main_worker(gpu, args):
     post_label = AsDiscrete(to_onehot=args.out_channels)
     post_pred = AsDiscrete(argmax=True, to_onehot=args.out_channels)
     dice_acc = DiceMetric(include_background=True, reduction=MetricReduction.MEAN, get_not_nans=True)
-    if args.additional_information == "modality_concat":
-        model_inferer_CT = partial(
-            sliding_window_inference,
-            roi_size=inf_size,
-            sw_batch_size=args.sw_batch_size,
-            predictor=model,
-            overlap=args.infer_overlap,
-            modality="CT",
-            info_mode="concat",
-        )
-        model_inferer_MRI = partial(
-            sliding_window_inference,
-            roi_size=inf_size,
-            sw_batch_size=args.sw_batch_size,
-            predictor=model,
-            overlap=args.infer_overlap,
-            modality="MRI",
-            info_mode="concat",
-        )
-        model_inferer = [model_inferer_CT, model_inferer_MRI]
-    elif args.additional_information == "modality_add":
-        model_inferer_CT = partial(
-            sliding_window_inference,
-            roi_size=inf_size,
-            sw_batch_size=args.sw_batch_size,
-            predictor=model,
-            overlap=args.infer_overlap,
-            modality="CT",
-            info_mode="add",
-        )
-        model_inferer_MRI = partial(
-            sliding_window_inference,
-            roi_size=inf_size,
-            sw_batch_size=args.sw_batch_size,
-            predictor=model,
-            overlap=args.infer_overlap,
-            modality="MRI",
-            info_mode="add",
-        )
-        model_inferer = [model_inferer_CT, model_inferer_MRI]
-    else:
-        model_inferer = partial(
-            sliding_window_inference,
-            roi_size=inf_size,
-            sw_batch_size=args.sw_batch_size,
-            predictor=model,
-            overlap=args.infer_overlap,
-        )
+    model_inferer = partial(
+        sliding_window_inference,
+        roi_size=inf_size,
+        sw_batch_size=args.sw_batch_size,
+        predictor=model,
+        overlap=args.infer_overlap,
+    )
 
     pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print("Total parameters count", pytorch_total_params)
@@ -324,21 +283,23 @@ if __name__ == "__main__":
     # args.json_list = "dataset_small.json"
     # loader = get_loader_2(args)
 
-    # train_loader=loader[1][1]
+    # train_loader=loader[0]
     # for idx, batch_data in enumerate(train_loader):
     #     if isinstance(batch_data, list):
     #         data, target = batch_data
     #     else:
     #         data, target = batch_data["image"], batch_data["label"]
-    #         filename = batch_data["image_meta_dict"]["filename_or_obj"][0]
-    #         image_index = int(filename[-10:-7])
-    #         if image_index < 500:
-    #             print("CT")
-    #         else:
-    #             print("MRI")
-        # print(idx)
-        # print(data.shape)
-        # print(target.shape)
+    #     print(idx)
+    #     print(data.shape)
+    #     print(target.shape)
+    #     combined = torch.cat((data, target), dim=1)
+    #     print(combined.shape)
+    #     sample = combined[31]
+    #     image = sample[None, 0]
+    #     labels = sample[1]
+    #     print(image.shape)
+    #     print(labels.shape)
+    #     print(torch.unique(labels))
 
     # # Visualisation
     # from data_utils.visualise_data import display_2d_tensor, plot_intensity_histogram_from_tensor_ct_mri

@@ -108,21 +108,26 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args):
 
 def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_label=None, post_pred=None):
     model.eval()
-    loader_ct = loader[0]
-    loader_mri = loader[1]
     start_time = time.time()
     with torch.no_grad():
         accs = []
-        for idx, batch_data in enumerate(loader_ct):
+        for idx, batch_data in enumerate(loader):
             if isinstance(batch_data, list):
                 data, target = batch_data
             else:
-                data, target = batch_data["image"], batch_data["label"]
+                data, target, filename = batch_data["image"], batch_data["label"], batch_data["image_meta_dict"]["filename_or_obj"][0]
             data, target = data.cuda(args.rank), target.cuda(args.rank)
             with autocast(enabled=args.amp):
+                image_index = int(filename[-10:-7])
+                if image_index < 500:
+                    modality = "CT"
+                else:
+                    modality = "MRI"
                 if model_inferer is not None:
-                    if args.additional_information == "modality_concat" or args.additional_information == "modality_add":
-                        logits = model_inferer[0](data)
+                    if args.additional_information == "modality_concat": 
+                        logits = model_inferer(data, modality=modality, info_mode="concat")
+                    elif args.additional_information == "modality_add":
+                        logits = model_inferer(data, modality=modality, info_mode="add")
                     else:
                         logits = model_inferer(data)
                 else:
@@ -144,44 +149,7 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
             accs.append(avg_acc)
             if args.rank == 0:
                 print(
-                    "Val {}/{} {}/{}".format(epoch, args.max_epochs, idx, len(loader_ct)+len(loader_mri)),
-                    "acc",
-                    avg_acc,
-                    "time {:.2f}s".format(time.time() - start_time),
-                )
-            start_time = time.time()
-        for idx, batch_data in enumerate(loader_mri):
-            if isinstance(batch_data, list):
-                data, target = batch_data
-            else:
-                data, target = batch_data["image"], batch_data["label"]
-            data, target = data.cuda(args.rank), target.cuda(args.rank)
-            with autocast(enabled=args.amp):
-                if model_inferer is not None:
-                    if args.additional_information == "modality_concat" or args.additional_information == "modality_add":
-                        logits = model_inferer[1](data)
-                    else:
-                        logits = model_inferer(data)
-                else:
-                    logits = model(data)
-            if not logits.is_cuda:
-                target = target.cpu()
-            val_labels_list = decollate_batch(target)
-            val_labels_convert = [post_label(val_label_tensor) for val_label_tensor in val_labels_list]
-            val_outputs_list = decollate_batch(logits)
-            val_output_convert = [post_pred(val_pred_tensor) for val_pred_tensor in val_outputs_list]
-            acc = acc_func(y_pred=val_output_convert, y=val_labels_convert)
-            acc = acc.cuda(args.rank)
-            if args.distributed:
-                acc_list = distributed_all_gather([acc], out_numpy=True, is_valid=idx < loader.sampler.valid_length)
-                avg_acc = np.mean([np.nanmean(l) for l in acc_list])
-            else:
-                acc_list = acc.detach().cpu().numpy()
-                avg_acc = np.mean([np.nanmean(l) for l in acc_list])
-            accs.append(avg_acc)
-            if args.rank == 0:
-                print(
-                    "Val {}/{} {}/{}".format(epoch, args.max_epochs, idx+len(loader_ct), len(loader_ct)+len(loader_mri)),
+                    "Val {}/{} {}/{}".format(epoch, args.max_epochs, idx, len(loader)),
                     "acc",
                     avg_acc,
                     "time {:.2f}s".format(time.time() - start_time),

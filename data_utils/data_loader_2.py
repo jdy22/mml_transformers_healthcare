@@ -234,28 +234,17 @@ def get_loader_2(args):
         val_files_mri = load_decathlon_datalist(datalist_json, True, "internal-validation-mri", base_dir=data_dir)
         val_ds_ct = data.Dataset(data=val_files_ct, transform=val_transform_ct)
         val_ds_mri = data.Dataset(data=val_files_mri, transform=val_transform_mri)
-        # val_ds_full = torch.utils.data.ConcatDataset([val_ds_ct, val_ds_mri])
-        val_sampler_ct = Sampler(val_ds_ct, shuffle=False) if args.distributed else None
-        val_sampler_mri = Sampler(val_ds_mri, shuffle=False) if args.distributed else None
-        val_loader_ct = data.DataLoader(
-            val_ds_ct,
+        val_ds_full = torch.utils.data.ConcatDataset([val_ds_ct, val_ds_mri])
+        val_sampler = Sampler(val_ds_full, shuffle=False) if args.distributed else None
+        val_loader = data.DataLoader(
+            val_ds_full,
             batch_size=1,
             shuffle=False,
             num_workers=args.workers,
-            sampler=val_sampler_ct,
+            sampler=val_sampler,
             pin_memory=True,
             persistent_workers=True,
         )
-        val_loader_mri = data.DataLoader(
-            val_ds_mri,
-            batch_size=1,
-            shuffle=False,
-            num_workers=args.workers,
-            sampler=val_sampler_mri,
-            pin_memory=True,
-            persistent_workers=True,
-        )
-        val_loader = [val_loader_ct, val_loader_mri]
         loader = [train_loader, val_loader]
 
     return loader

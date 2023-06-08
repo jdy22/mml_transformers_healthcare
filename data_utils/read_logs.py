@@ -1,7 +1,7 @@
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 import matplotlib.pyplot as plt
 
-logfile = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/Code/individual_project/runs/run18/events.out.tfevents.1684926649.gpu27.doc.ic.ac.uk"
+logfile = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/Code/individual_project/runs_modality/run2/events.out.tfevents.1686146614.gpu27.doc.ic.ac.uk"
 
 event_acc = EventAccumulator(logfile)
 event_acc.Reload()
