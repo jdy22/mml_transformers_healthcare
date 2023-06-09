@@ -168,7 +168,7 @@ def get_loader_2(args):
                 ratios=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                 num_classes=16,
                 num_samples=args.val_samples,
-            ),
+            ).set_random_state(seed=3456789),
             transforms.SqueezeDimd(keys=["image", "label"], dim=-1),
             transforms.ToTensord(keys=["image", "label"]),
         ]

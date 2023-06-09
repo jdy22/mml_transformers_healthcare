@@ -150,9 +150,7 @@ def main():
     model.to(device)
 
     with torch.no_grad():
-        set_determinism()
         visualise_predictions(args, model, loader_ct, modality="CT", image_index=0, num_samples=5)
-        set_determinism()
         visualise_predictions(args, model, loader_mri, modality="MRI", image_index=0, num_samples=5)
 
 
@@ -160,5 +158,7 @@ if __name__ == "__main__":
     import resource
     rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
     resource.setrlimit(resource.RLIMIT_NOFILE, (2048, rlimit[1]))
+
+    set_determinism()
 
     main()
