@@ -22,6 +22,7 @@ from data_utils.data_loader_3 import get_loader_3
 from data_utils.visualise_data import plot_save_predictions
 
 from monai.inferers import sliding_window_inference
+from monai.utils.misc import set_determinism
 
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
@@ -149,7 +150,9 @@ def main():
     model.to(device)
 
     with torch.no_grad():
+        set_determinism()
         visualise_predictions(args, model, loader_ct, modality="CT", image_index=0, num_samples=5)
+        set_determinism()
         visualise_predictions(args, model, loader_mri, modality="MRI", image_index=0, num_samples=5)
 
 
@@ -157,8 +160,5 @@ if __name__ == "__main__":
     import resource
     rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
     resource.setrlimit(resource.RLIMIT_NOFILE, (2048, rlimit[1]))
-
-    from monai.utils.misc import set_determinism
-    set_determinism()
 
     main()

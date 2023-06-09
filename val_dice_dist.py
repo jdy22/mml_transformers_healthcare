@@ -256,9 +256,7 @@ def main():
 
     with torch.no_grad():
         if args.distance_metric == "hausdorff":
-            set_determinism()
             mean_dice_ct, mean_dice_per_organ_ct, mean_hd_ct, mean_hd_per_organ_ct, mean_count_ct, counts_per_organ_ct = calculate_dice_hausdorff(args, model, loader_ct, modality="CT")
-            set_determinism()
             mean_dice_mri, mean_dice_per_organ_mri, mean_hd_mri, mean_hd_per_organ_mri, mean_count_mri, counts_per_organ_mri = calculate_dice_hausdorff(args, model, loader_mri, modality="MRI")
             print("Final scores:")
             print(f"CT: mDice = {mean_dice_ct}, mHD95 = {mean_hd_ct}, missed predictions = {mean_count_ct}")
@@ -270,9 +268,7 @@ def main():
             print(mean_hd_per_organ_mri)
             print(counts_per_organ_mri)
         elif args.distance_metric == "nsd":
-            set_determinism()
             mean_dice_ct, mean_dice_per_organ_ct, mean_nsd_ct, mean_nsd_per_organ_ct = calculate_dice_nsd(args, model, loader_ct, modality="CT")
-            set_determinism()
             mean_dice_mri, mean_dice_per_organ_mri, mean_nsd_mri, mean_nsd_per_organ_mri = calculate_dice_nsd(args, model, loader_mri, modality="MRI")
             print("Final scores:")
             print(f"CT: mDice = {mean_dice_ct}, mNSD = {mean_nsd_ct}")
@@ -287,5 +283,7 @@ if __name__ == "__main__":
     import resource
     rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
     resource.setrlimit(resource.RLIMIT_NOFILE, (2048, rlimit[1]))
+
+    set_determinism()
 
     main()
