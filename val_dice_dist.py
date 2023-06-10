@@ -256,14 +256,14 @@ def main():
 
     with torch.no_grad():
         if args.distance_metric == "hausdorff":
-            # mean_dice_ct, mean_dice_per_organ_ct, mean_hd_ct, mean_hd_per_organ_ct, mean_count_ct, counts_per_organ_ct = calculate_dice_hausdorff(args, model, loader_ct, modality="CT")
+            mean_dice_ct, mean_dice_per_organ_ct, mean_hd_ct, mean_hd_per_organ_ct, mean_count_ct, counts_per_organ_ct = calculate_dice_hausdorff(args, model, loader_ct, modality="CT")
             mean_dice_mri, mean_dice_per_organ_mri, mean_hd_mri, mean_hd_per_organ_mri, mean_count_mri, counts_per_organ_mri = calculate_dice_hausdorff(args, model, loader_mri, modality="MRI")
             print("Final scores:")
-            # print(f"CT: mDice = {mean_dice_ct}, mHD95 = {mean_hd_ct}, missed predictions = {mean_count_ct}")
+            print(f"CT: mDice = {mean_dice_ct}, mHD95 = {mean_hd_ct}, missed predictions = {mean_count_ct}")
             print(f"MRI: mDice = {mean_dice_mri}, mHD95 = {mean_hd_mri}, missed predictions = {mean_count_mri}")
-            # print(mean_dice_per_organ_ct)
-            # print(mean_hd_per_organ_ct)
-            # print(counts_per_organ_ct)
+            print(mean_dice_per_organ_ct)
+            print(mean_hd_per_organ_ct)
+            print(counts_per_organ_ct)
             print(mean_dice_per_organ_mri)
             print(mean_hd_per_organ_mri)
             print(counts_per_organ_mri)
