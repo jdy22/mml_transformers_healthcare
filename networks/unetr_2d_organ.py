@@ -135,8 +135,16 @@ class ViT_organ(nn.Module):
         batch_size = x.shape[0]
         n_patches = x.shape[1]
         n_organs = 15
-        x_full = torch.empty((0, n_patches+n_organs, self.hidden_size))
-        for i in range(batch_size):
+
+        x_full = x[None, 0]
+        organs_present = torch.unique(labels[0])
+        for organ in range(1, n_organs+1):
+            if organ in organs_present:
+                x_full = torch.cat((x_full, self.organ_tokens[str(organ)]), dim=1)
+            else:
+                x_full = torch.cat((x_full, self.no_organ_tokens[str(organ)]), dim=1)
+
+        for i in range(1, batch_size):
             embeddings = x[None, i]
             organs_present = torch.unique(labels[i])
             for organ in range(1, n_organs+1):
