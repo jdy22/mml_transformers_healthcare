@@ -36,7 +36,7 @@ from monai.utils.enums import MetricReduction
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument("--checkpoint", default=None, help="start training from saved checkpoint")
-parser.add_argument("--logdir", default="run1", type=str, help="directory to save the tensorboard logs")
+parser.add_argument("--logdir", default="rerun1", type=str, help="directory to save the tensorboard logs")
 parser.add_argument(
     "--pretrained_dir", default=None, type=str, help="pretrained checkpoint directory"
 )
@@ -102,13 +102,19 @@ parser.add_argument("--val_samples", default=20, type=int, help="number of sampl
 parser.add_argument("--train_sampling", default="uniform", type=str, help="sampling distribution of organs during training")
 parser.add_argument("--preprocessing", default=2, type=int, help="preprocessing option")
 parser.add_argument("--data_augmentation", action="store_false", help="use data augmentation during training")
-parser.add_argument("--additional_information", default="organ", help="additional information provided to segmentation model")
+parser.add_argument("--additional_information", default="modality_concat", help="additional information provided to segmentation model")
 
 
 def main():
     args = parser.parse_args()
     args.amp = not args.noamp
-    args.logdir = "./runs_organ/" + args.logdir
+    if args.additional_information == "modality_concat" or args.additional_information == "modality_add":
+        args.logdir = "./runs_modality/" + args.logdir
+    elif args.additional_information == "organ":
+        args.logdir = "./runs_organ/" + args.logdir
+    else:
+        args.logdir = "./runs/" + args.logdir
+
     if args.distributed:
         args.ngpus_per_node = torch.cuda.device_count()
         print("Found total gpus", args.ngpus_per_node)
