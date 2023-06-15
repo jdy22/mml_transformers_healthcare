@@ -38,7 +38,7 @@ parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument("--checkpoint", default="./runs_organ/run1/model.pt", help="start training from saved checkpoint")
 parser.add_argument("--logdir", default="run1b", type=str, help="directory to save the tensorboard logs")
 parser.add_argument(
-    "--pretrained_dir", default=None, type="./runs_organ/run1/", help="pretrained checkpoint directory"
+    "--pretrained_dir", default="./runs_organ/run1/", type=str, help="pretrained checkpoint directory"
 )
 parser.add_argument("--data_dir", default="./amos22/", type=str, help="dataset directory")
 parser.add_argument("--json_list", default="dataset_internal_val.json", type=str, help="dataset json file")
