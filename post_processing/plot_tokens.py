@@ -124,7 +124,7 @@ def main():
         if args.additional_information == "modality_concat" or args.additional_information == "modality_add":
             CT_token = model.vit.CT_token.cpu().numpy()
             MRI_token = model.vit.MRI_token.cpu().numpy()
-            plot_modality_tokens(CT_token, MRI_token)
+            plot_modality_tokens(CT_token, MRI_token, args)
 
 
 if __name__ == "__main__":
