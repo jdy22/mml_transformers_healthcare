@@ -70,8 +70,15 @@ def plot_modality_tokens(CT_token, MRI_token, args):
     plt.savefig(fname=(args.pretrained_dir + "modality_tokens.png"))
 
 
-def plot_organ_tokens(organ_tokens):
-    pass
+def plot_organ_tokens(organ_tokens, args, mode):
+    # Options for mode: "organ_tokens" or "no_organ_tokens"
+    for organ in range(1, 16):
+        organ_token = organ_tokens[str(organ)].cpu().numpy()[0, 0]
+        x = np.arange(len(organ_token))
+        plt.plot(x, organ_token, label=("Organ " + str(organ)))
+    
+    plt.legend()
+    plt.savefig(fname=(args.pretrained_dir + mode + ".png"))
         
 
 def main():
@@ -125,6 +132,11 @@ def main():
             CT_token = model.vit.CT_token.cpu().numpy()
             MRI_token = model.vit.MRI_token.cpu().numpy()
             plot_modality_tokens(CT_token, MRI_token, args)
+        elif args.additional_information == "organ":
+            organ_tokens = model.vit.organ_tokens
+            no_organ_tokens = model.vit.no_organ_tokens
+            plot_organ_tokens(organ_tokens, args, mode="organ_tokens")
+            plot_organ_tokens(no_organ_tokens, args, mode="no_organ_tokens")
 
 
 if __name__ == "__main__":
