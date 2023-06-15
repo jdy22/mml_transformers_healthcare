@@ -64,6 +64,7 @@ def plot_modality_tokens(CT_token, MRI_token, args):
     MRI_token = MRI_token[0, 0]
     x = np.arange(len(CT_token))
 
+    plt.figure()
     plt.plot(x, CT_token, label="CT token")
     plt.plot(x, MRI_token, label="MRI token")
     plt.legend()
@@ -72,6 +73,8 @@ def plot_modality_tokens(CT_token, MRI_token, args):
 
 def plot_organ_tokens(organ_tokens, args, mode):
     # Options for mode: "organ_tokens" or "no_organ_tokens"
+    plt.figure()
+
     for organ in range(1, 16):
         organ_token = organ_tokens[str(organ)].cpu().numpy()[0, 0]
         x = np.arange(len(organ_token))
