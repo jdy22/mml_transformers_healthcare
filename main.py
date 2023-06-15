@@ -36,7 +36,7 @@ from monai.utils.enums import MetricReduction
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument("--checkpoint", default="./runs_organ/run1/model.pt", help="start training from saved checkpoint")
-parser.add_argument("--logdir", default="run1", type=str, help="directory to save the tensorboard logs")
+parser.add_argument("--logdir", default="run1b", type=str, help="directory to save the tensorboard logs")
 parser.add_argument(
     "--pretrained_dir", default=None, type="./runs_organ/run1/", help="pretrained checkpoint directory"
 )
