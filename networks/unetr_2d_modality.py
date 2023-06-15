@@ -326,3 +326,6 @@ if __name__ == "__main__":
     x = torch.zeros((40, 1, 112, 112))
     logits = model(x, modality="CT", info_mode="add")
     print(logits.shape)
+
+    CT_token = model.vit.CT_token
+    print(CT_token.shape)
