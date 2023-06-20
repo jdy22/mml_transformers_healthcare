@@ -89,10 +89,12 @@ class ViT_modality(nn.Module):
 
         self.CT_token = nn.Parameter(torch.zeros(1, 1, hidden_size))
         self.MRI_token = nn.Parameter(torch.zeros(1, 1, hidden_size))
+        self.no_CT_token = nn.Parameter(torch.zeros(1, 1, hidden_size))
+        self.no_MRI_token = nn.Parameter(torch.zeros(1, 1, hidden_size))
 
     def forward(self, x, modality, info_mode):
         # Options for modality: "CT" or "MRI"
-        # Options for info_mode: "concat" or "add"
+        # Options for info_mode: "concat", "concat2" or "add"
         x = self.patch_embedding(x)
         if info_mode == "concat":
             if modality == "CT":
@@ -100,6 +102,14 @@ class ViT_modality(nn.Module):
             elif modality == "MRI":
                 modality_token = self.MRI_token.expand(x.shape[0], -1, -1)
             x_full = torch.cat((x, modality_token), dim=1)
+        elif info_mode == "concat2":
+            if modality == "CT":
+                CT_token = self.CT_token.expand(x.shape[0], -1, -1)
+                MRI_token = self.no_MRI_token.expand(x.shape[0], -1, -1)
+            elif modality == "MRI":
+                CT_token = self.no_CT_token.expand(x.shape[0], -1, -1)
+                MRI_token = self.MRI_token.expand(x.shape[0], -1, -1)
+            x_full = torch.cat((x, CT_token, MRI_token), dim=1)
         elif info_mode == "add":
             if modality == "CT":
                 modality_token = self.CT_token.expand(x.shape[0], x.shape[1], -1)
@@ -112,12 +122,17 @@ class ViT_modality(nn.Module):
             x_full = blk(x_full)
             if info_mode == "concat":
                 hidden_states_out.append(x_full[:, :-1, :])
+            elif info_mode == "concat2":
+                hidden_states_out.append(x_full[:, :-2, :])
             elif info_mode == "add":
                 hidden_states_out.append(x_full)
         x_full = self.norm(x_full)
         if info_mode == "concat":
             x_out = x_full[:, :-1, :]
             modality_out = x_full[:, -1, :]
+        elif info_mode == "concat2":
+            x_out = x_full[:, :-2, :]
+            modality_out = x_full[:, -2:, :]
         elif info_mode == "add":
             x_out = x_full
             modality_out = None
@@ -324,7 +339,7 @@ if __name__ == "__main__":
     )
 
     x = torch.zeros((40, 1, 112, 112))
-    logits = model(x, modality="CT", info_mode="add")
+    logits = model(x, modality="CT", info_mode="concat2")
     print(logits.shape)
 
     CT_token = model.vit.CT_token

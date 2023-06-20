@@ -73,6 +73,8 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args):
                 modality = "MRI"
             if args.additional_information == "modality_concat":
                 logits = model(data, modality, info_mode="concat")
+            elif args.additional_information == "modality_concat2":
+                logits = model(data, modality, info_mode="concat2")
             elif args.additional_information == "modality_add":
                 logits = model(data, modality, info_mode="add")
             elif args.additional_information == "organ":
@@ -129,6 +131,8 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
                 if model_inferer is not None:
                     if args.additional_information == "modality_concat": 
                         logits = model_inferer(data, modality=modality, info_mode="concat")
+                    elif args.additional_information == "modality_concat2": 
+                        logits = model_inferer(data, modality=modality, info_mode="concat2")
                     elif args.additional_information == "modality_add":
                         logits = model_inferer(data, modality=modality, info_mode="add")
                     elif args.additional_information == "organ":
