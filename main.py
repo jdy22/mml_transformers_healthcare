@@ -35,10 +35,10 @@ from monai.transforms import Activations, AsDiscrete, Compose
 from monai.utils.enums import MetricReduction
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
-parser.add_argument("--checkpoint", default="./runs_modality/run3/model.pt", help="start training from saved checkpoint")
-parser.add_argument("--logdir", default="run3b", type=str, help="directory to save the tensorboard logs")
+parser.add_argument("--checkpoint", default=None, help="start training from saved checkpoint")
+parser.add_argument("--logdir", default="test", type=str, help="directory to save the tensorboard logs")
 parser.add_argument(
-    "--pretrained_dir", default="./runs_modality/run3/", type=str, help="pretrained checkpoint directory"
+    "--pretrained_dir", default=None, type=str, help="pretrained checkpoint directory"
 )
 parser.add_argument("--data_dir", default="./amos22/", type=str, help="dataset directory")
 parser.add_argument("--json_list", default="dataset_internal_val.json", type=str, help="dataset json file")
@@ -91,7 +91,7 @@ parser.add_argument("--dropout_rate", default=0.0, type=float, help="dropout rat
 parser.add_argument("--infer_overlap", default=0.5, type=float, help="sliding window inference overlap")
 parser.add_argument("--lrschedule", default="warmup_cosine", type=str, help="type of learning rate scheduler")
 parser.add_argument("--warmup_epochs", default=50, type=int, help="number of warmup epochs")
-parser.add_argument("--resume_ckpt", action="store_false", help="resume training from pretrained checkpoint")
+parser.add_argument("--resume_ckpt", action="store_true", help="resume training from pretrained checkpoint")
 parser.add_argument("--resume_jit", action="store_true", help="resume training from pretrained torchscript checkpoint")
 parser.add_argument("--smooth_dr", default=1e-6, type=float, help="constant added to dice denominator to avoid nan")
 parser.add_argument("--smooth_nr", default=0.0, type=float, help="constant added to dice numerator to avoid zero")
@@ -102,7 +102,8 @@ parser.add_argument("--val_samples", default=20, type=int, help="number of sampl
 parser.add_argument("--train_sampling", default="uniform", type=str, help="sampling distribution of organs during training")
 parser.add_argument("--preprocessing", default=2, type=int, help="preprocessing option")
 parser.add_argument("--data_augmentation", action="store_false", help="use data augmentation during training")
-parser.add_argument("--additional_information", default="modality_concat2", help="additional information provided to segmentation model")
+parser.add_argument("--additional_information", default="organ_classif", help="additional information provided to segmentation model")
+parser.add_argument("--loss_combination_factor", default=1.0, type=float, help="combination factor for segmentation and classification losses")
 
 
 def main():
@@ -110,7 +111,7 @@ def main():
     args.amp = not args.noamp
     if args.additional_information == "modality_concat" or args.additional_information == "modality_concat2" or args.additional_information == "modality_add":
         args.logdir = "./runs_modality/" + args.logdir
-    elif args.additional_information == "organ":
+    elif args.additional_information == "organ" or args.additional_information == "organ_classif":
         args.logdir = "./runs_organ/" + args.logdir
     else:
         args.logdir = "./runs/" + args.logdir
@@ -125,7 +126,6 @@ def main():
 
 
 def main_worker(gpu, args):
-
     if args.distributed:
         torch.multiprocessing.set_start_method("fork", force=True)
     np.set_printoptions(formatter={"float": "{: 0.3f}".format}, suppress=True)
@@ -179,6 +179,23 @@ def main_worker(gpu, args):
                 conv_block=True,
                 res_block=True,
                 dropout_rate=args.dropout_rate,
+                classification=False,
+            )
+        elif args.additional_information == "organ_classif":
+            model = UNETR_2D_organ(
+                in_channels=args.in_channels,
+                out_channels=args.out_channels,
+                img_size=(args.roi_x, args.roi_y),
+                feature_size=args.feature_size,
+                hidden_size=args.hidden_size,
+                mlp_dim=args.mlp_dim,
+                num_heads=args.num_heads,
+                pos_embed=args.pos_embed,
+                norm_name=args.norm_name,
+                conv_block=True,
+                res_block=True,
+                dropout_rate=args.dropout_rate,
+                classification=True,
             )
         else:
             model = UNETR_2D(
@@ -209,9 +226,12 @@ def main_worker(gpu, args):
     else:
         raise ValueError("Unsupported model " + str(args.model_name))
 
-    dice_loss = DiceCELoss(
-        to_onehot_y=True, softmax=True, squared_pred=True, smooth_nr=args.smooth_nr, smooth_dr=args.smooth_dr
-    )
+    dice_loss = DiceCELoss(to_onehot_y=True, softmax=True, squared_pred=True, smooth_nr=args.smooth_nr, smooth_dr=args.smooth_dr)
+    if args.additional_information == "organ_classif":
+        bce_loss = torch.nn.BCELoss()
+        loss_func = [dice_loss, bce_loss]
+    else:
+        loss_func = dice_loss
     post_label = AsDiscrete(to_onehot=args.out_channels)
     post_pred = AsDiscrete(argmax=True, to_onehot=args.out_channels)
     dice_acc = DiceMetric(include_background=True, reduction=MetricReduction.MEAN, get_not_nans=True)
@@ -279,7 +299,7 @@ def main_worker(gpu, args):
         train_loader=loader[0],
         val_loader=loader[1],
         optimizer=optimizer,
-        loss_func=dice_loss,
+        loss_func=loss_func,
         acc_func=dice_acc,
         args=args,
         model_inferer=model_inferer,
@@ -302,7 +322,7 @@ if __name__ == "__main__":
     # set_determinism()
     
     # args = parser.parse_args()
-    # args.test_mode = True
+    # args.test_mode = False
     # args.test_type = "validation"
     # args.data_dir = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/"
     # args.json_list = "dataset_small.json"
@@ -317,14 +337,6 @@ if __name__ == "__main__":
     #     print(idx)
     #     print(data.shape)
     #     print(target.shape)
-    #     combined = torch.cat((data, target), dim=1)
-    #     print(combined.shape)
-    #     sample = combined[31]
-    #     image = sample[None, 0]
-    #     labels = sample[1]
-    #     print(image.shape)
-    #     print(labels.shape)
-    #     print(torch.unique(labels))
 
     # # Visualisation
     # from data_utils.visualise_data import display_2d_tensor, plot_intensity_histogram_from_tensor_ct_mri

@@ -55,6 +55,9 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args):
     model.train()
     start_time = time.time()
     run_loss = AverageMeter()
+    if args.additional_information == "organ_classif":
+        run_seg_loss = AverageMeter()
+        run_class_loss = AverageMeter()
     for idx, batch_data in enumerate(loader):
         if isinstance(batch_data, list):
             data, target = batch_data
@@ -71,6 +74,7 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args):
                 modality = "CT"
             else:
                 modality = "MRI"
+
             if args.additional_information == "modality_concat":
                 logits = model(data, modality, info_mode="concat")
             elif args.additional_information == "modality_concat2":
@@ -80,9 +84,21 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args):
             elif args.additional_information == "organ":
                 data_in = torch.cat((data, target), dim=1)
                 logits = model(data_in)
+            elif args.additional_information == "organ_classif":
+                seg_logits, class_logits = model(data, test_mode=False)
             else:
                 logits = model(data)
-            loss = loss_func(logits, target)
+
+            if args.additional_information == "organ_classif":
+                seg_loss = loss_func[0](seg_logits, target)
+                class_labels = torch.zeros((class_logits.shape[0], class_logits.shape[1]+1, 1))
+                for i in range(class_logits.shape[0]):
+                    class_labels[i, torch.unique(target[i]).as_tensor().to(int)] = 1
+                class_labels = class_labels[:, 1:, :]
+                class_loss = loss_func[1](class_logits, class_labels)
+                loss = seg_loss + args.loss_combination_factor*class_loss
+            else:
+                loss = loss_func(logits, target)
         if args.amp:
             scaler.scale(loss).backward()
             scaler.step(optimizer)
@@ -97,14 +113,28 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args):
             )
         else:
             run_loss.update(loss.item(), n=args.batch_size)
+            if args.additional_information == "organ_classif":
+                run_seg_loss.update(seg_loss.item(), n=args.batch_size)
+                run_class_loss.update(class_loss.item(), n=args.batch_size)
         if args.rank == 0:
-            print(
-                "Epoch {}/{} {}/{}".format(epoch, args.max_epochs, idx, len(loader)),
-                "loss: {:.4f}".format(run_loss.avg),
-                "time {:.2f}s".format(time.time() - start_time),
-                "loader time {:.2f}s".format(load_time),
-                "optimisation time {:.2f}s".format(time.time() - inter_time),
-            )
+            if args.additional_information == "organ_classif":
+                print(
+                    "Epoch {}/{} {}/{}".format(epoch, args.max_epochs, idx, len(loader)),
+                    "total loss: {:.4f}".format(run_loss.avg),
+                    "seg loss: {:.4f}".format(run_seg_loss.avg),
+                    "class loss: {:.4f}".format(run_class_loss.avg),
+                    "time {:.2f}s".format(time.time() - start_time),
+                    "loader time {:.2f}s".format(load_time),
+                    "optimisation time {:.2f}s".format(time.time() - inter_time),
+                )            
+            else:
+                print(
+                    "Epoch {}/{} {}/{}".format(epoch, args.max_epochs, idx, len(loader)),
+                    "loss: {:.4f}".format(run_loss.avg),
+                    "time {:.2f}s".format(time.time() - start_time),
+                    "loader time {:.2f}s".format(load_time),
+                    "optimisation time {:.2f}s".format(time.time() - inter_time),
+                )
         start_time = time.time()
     for param in model.parameters():
         param.grad = None
@@ -138,6 +168,8 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
                     elif args.additional_information == "organ":
                         data_in = torch.cat((data, target), dim=1)
                         logits = model_inferer(data_in)
+                    elif args.additional_information == "organ_classif":
+                        logits = model_inferer(data, test_mode=True)
                     else:
                         logits = model_inferer(data)
                 else:
