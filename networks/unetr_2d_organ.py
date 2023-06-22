@@ -336,10 +336,7 @@ class UNETR_2D_organ(nn.Module):
         )
         self.out = UnetOutBlock(spatial_dims=2, in_channels=feature_size, out_channels=out_channels)  # type: ignore
         if self.classification:
-            self.classification_head = nn.Sequential(
-                nn.Linear(in_features=hidden_size, out_features=1),
-                nn.Sigmoid()
-            )
+            self.classification_head = nn.Linear(in_features=hidden_size, out_features=1)
 
     def proj_feat(self, x, hidden_size, feat_size):
         x = x.view(x.size(0), feat_size[0], feat_size[1], hidden_size)

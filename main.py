@@ -228,7 +228,7 @@ def main_worker(gpu, args):
 
     dice_loss = DiceCELoss(to_onehot_y=True, softmax=True, squared_pred=True, smooth_nr=args.smooth_nr, smooth_dr=args.smooth_dr)
     if args.additional_information == "organ_classif":
-        bce_loss = torch.nn.BCELoss()
+        bce_loss = torch.nn.BCEWithLogitsLoss()
         loss_func = [dice_loss, bce_loss]
     else:
         loss_func = dice_loss
