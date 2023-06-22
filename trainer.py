@@ -94,7 +94,7 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args):
                 class_labels = torch.zeros((class_logits.shape[0], class_logits.shape[1]+1, 1))
                 for i in range(class_logits.shape[0]):
                     class_labels[i, torch.unique(target[i]).as_tensor().to(int)] = 1
-                class_labels = class_labels[:, 1:, :]
+                class_labels = class_labels[:, 1:, :].cuda(args.rank)
                 class_loss = loss_func[1](class_logits, class_labels)
                 loss = seg_loss + args.loss_combination_factor*class_loss
             else:
