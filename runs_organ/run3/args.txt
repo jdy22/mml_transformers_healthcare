@@ -1,6 +1,6 @@
 {
   "checkpoint": null,
-  "logdir": "./runs_organ/test",
+  "logdir": "./runs_organ/run3",
   "pretrained_dir": null,
   "data_dir": "./amos22/",
   "json_list": "dataset_internal_val.json",
@@ -14,7 +14,7 @@
   "reg_weight": 1e-05,
   "momentum": 0.99,
   "noamp": false,
-  "val_every": 1,
+  "val_every": 20,
   "distributed": false,
   "world_size": 1,
   "rank": 0,
@@ -55,7 +55,7 @@
   "preprocessing": 2,
   "data_augmentation": true,
   "additional_information": "organ_classif",
-  "loss_combination_factor": 1.0,
+  "loss_combination_factor": 2.0,
   "amp": true,
   "gpu": 0,
   "test_mode": false
