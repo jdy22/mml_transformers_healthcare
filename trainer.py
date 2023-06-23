@@ -85,7 +85,7 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args):
                 data_in = torch.cat((data, target), dim=1)
                 logits = model(data_in)
             elif args.additional_information == "organ_classif":
-                seg_logits, class_logits = model(data, test_mode=False)
+                seg_logits, class_logits = model(data, test_mode=False, class_layer=args.classification_layer)
             else:
                 logits = model(data)
 

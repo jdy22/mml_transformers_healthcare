@@ -164,14 +164,16 @@ class ViT_organ(nn.Module):
                 x_full = torch.cat((x_full, embeddings), dim=0)
  
         hidden_states_out = []
+        hidden_organs_out = []
         for blk in self.blocks:
             x_full = blk(x_full)
             hidden_states_out.append(x_full[:, :n_patches, :])
+            hidden_organs_out.append(x_full[:, n_patches:, :])
         x_full = self.norm(x_full)
         x_out = x_full[:, :n_patches, :]
         organs_out = x_full[:, n_patches:, :]
 
-        return x_out, hidden_states_out, organs_out
+        return x_out, hidden_states_out, organs_out, hidden_organs_out
 
 
 class UNETR_2D_organ(nn.Module):
@@ -343,8 +345,8 @@ class UNETR_2D_organ(nn.Module):
         x = x.permute(0, 3, 1, 2).contiguous()
         return x
 
-    def forward(self, x_in, test_mode=None):
-        x, hidden_states_out, organs_out = self.vit(x_in)
+    def forward(self, x_in, test_mode=None, class_layer=None):
+        x, hidden_states_out, organs_out, hidden_organs_out = self.vit(x_in)
         if self.classification:
             enc1 = self.encoder1(x_in)
         else:
@@ -365,7 +367,10 @@ class UNETR_2D_organ(nn.Module):
             if test_mode:
                 return seg_logits
             else:
-                class_logits = self.classification_head(organs_out)
+                if class_layer == 12:
+                    class_logits = self.classification_head(organs_out)
+                else:
+                    class_logits = self.classification_head(hidden_organs_out[class_layer-1])
                 return seg_logits, class_logits
         else:
             return seg_logits
