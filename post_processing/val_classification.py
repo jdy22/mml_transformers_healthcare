@@ -43,6 +43,7 @@ parser.add_argument("--out_channels", default=16, type=int, help="number of outp
 parser.add_argument("--num_heads", default=12, type=int, help="number of attention heads in ViT encoder")
 parser.add_argument("--res_block", action="store_true", help="use residual blocks")
 parser.add_argument("--conv_block", action="store_true", help="use conv blocks")
+parser.add_argument("--use_normal_dataset", action="store_true", help="use monai Dataset class")
 # parser.add_argument("--a_min", default=-175.0, type=float, help="a_min in ScaleIntensityRanged")
 # parser.add_argument("--a_max", default=250.0, type=float, help="a_max in ScaleIntensityRanged")
 # parser.add_argument("--b_min", default=0.0, type=float, help="b_min in ScaleIntensityRanged")
