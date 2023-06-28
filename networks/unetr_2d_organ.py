@@ -398,6 +398,7 @@ if __name__ == "__main__":
     # print(logits.shape)
 
     x = torch.zeros((40, 1, 112, 112))
-    seg_logits, class_logits = model(x)
+    seg_logits, class_logits = model(x, test_mode=False, class_layer=3)
     print(seg_logits.shape)
     print(class_logits.shape)
+    print(class_logits[1,3,0].item())
