@@ -34,6 +34,7 @@ parser.add_argument(
 parser.add_argument(
     "--saved_checkpoint", default="ckpt", type=str, help="Supports torchscript or ckpt pretrained checkpoint type"
 )
+parser.add_argument("--batch_size", default=1, type=int, help="number of batch size")
 parser.add_argument("--mlp_dim", default=3072, type=int, help="mlp dimention in ViT encoder")
 parser.add_argument("--hidden_size", default=768, type=int, help="hidden size dimention in ViT encoder")
 parser.add_argument("--feature_size", default=64, type=int, help="feature size dimention")
