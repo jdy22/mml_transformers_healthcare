@@ -82,6 +82,8 @@ def visualise_predictions(args, model, loader, modality, image_index, num_sample
             val_inputs, val_labels = (batch["image"].cuda(), batch["label"].cuda())
             if args.additional_information == "modality_concat":
                 val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="concat")
+            if args.additional_information == "modality_concat2":
+                val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="concat2")
             elif args.additional_information == "modality_add":
                 val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="add")
             elif args.additional_information == "organ":
@@ -118,7 +120,7 @@ def main():
     if args.saved_checkpoint == "torchscript":
         model = torch.jit.load(pretrained_pth)
     elif args.saved_checkpoint == "ckpt":
-        if args.additional_information == "modality_concat" or args.additional_information == "modality_add":
+        if args.additional_information == "modality_concat" or args.additional_information == "modality_concat2" or args.additional_information == "modality_add":
             model = UNETR_2D_modality(
                 in_channels=args.in_channels,
                 out_channels=args.out_channels,
