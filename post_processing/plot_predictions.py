@@ -89,6 +89,8 @@ def visualise_predictions(args, model, loader, modality, image_index, num_sample
             elif args.additional_information == "organ":
                 val_inputs_full = torch.cat((val_inputs, val_labels), dim=1)
                 val_outputs = sliding_window_inference(val_inputs_full, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap)
+            elif args.additional_information == "organ_classif":
+                val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, test_mode=True)
             else:
                 val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap)
             val_outputs = torch.softmax(val_outputs, 1).cpu().numpy()
@@ -149,6 +151,23 @@ def main():
                 conv_block=True,
                 res_block=True,
                 dropout_rate=args.dropout_rate,
+                classification=False,
+            )
+        elif args.additional_information == "organ_classif":
+            model = UNETR_2D_organ(
+                in_channels=args.in_channels,
+                out_channels=args.out_channels,
+                img_size=(args.roi_x, args.roi_y),
+                feature_size=args.feature_size,
+                hidden_size=args.hidden_size,
+                mlp_dim=args.mlp_dim,
+                num_heads=args.num_heads,
+                pos_embed=args.pos_embed,
+                norm_name=args.norm_name,
+                conv_block=True,
+                res_block=True,
+                dropout_rate=args.dropout_rate,
+                classification=True,
             )
         else:
             model = UNETR_2D(
