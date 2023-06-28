@@ -24,7 +24,7 @@ from monai.utils.misc import set_determinism
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument(
-    "--pretrained_dir", default="./runs_organ/run4/", type=str, help="pretrained checkpoint directory"
+    "--pretrained_dir", default="./runs_organ/run5/", type=str, help="pretrained checkpoint directory"
 )
 parser.add_argument("--data_dir", default="./amos22/", type=str, help="dataset directory")
 parser.add_argument("--json_list", default="dataset_internal_val.json", type=str, help="dataset json file")
@@ -73,7 +73,7 @@ parser.add_argument("--preprocessing", default=2, type=int, help="preprocessing 
 parser.add_argument("--data_augmentation", action="store_false", help="use data augmentation during training")
 parser.add_argument("--distance_metric", default="hausdorff", type=str, help="distance metric for evaluation - hausdorff or nsd")
 parser.add_argument("--additional_information", default="organ_classif", help="additional information provided to segmentation model")
-parser.add_argument("--classification_layer", default=3, type=int, help="Transformer layer for classification")
+parser.add_argument("--classification_layer", default=6, type=int, help="Transformer layer for classification")
 
 
 def calculate_accuracy(args, model, loader):
