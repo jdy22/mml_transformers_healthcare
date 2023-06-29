@@ -204,11 +204,11 @@ class UNETR_2D(nn.Module):
     def forward(self, x_in):
         x, hidden_states_out = self.vit(x_in)
         enc1 = self.encoder1(x_in)
-        x2 = hidden_states_out[3]
+        x2 = hidden_states_out[2]
         enc2 = self.encoder2(self.proj_feat(x2, self.hidden_size, self.feat_size))
-        x3 = hidden_states_out[6]
+        x3 = hidden_states_out[5]
         enc3 = self.encoder3(self.proj_feat(x3, self.hidden_size, self.feat_size))
-        x4 = hidden_states_out[9]
+        x4 = hidden_states_out[8]
         enc4 = self.encoder4(self.proj_feat(x4, self.hidden_size, self.feat_size))
         dec4 = self.proj_feat(x, self.hidden_size, self.feat_size)
         dec3 = self.decoder5(dec4, enc4)
