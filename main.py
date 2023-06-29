@@ -36,7 +36,7 @@ from monai.utils.enums import MetricReduction
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument("--checkpoint", default=None, help="start training from saved checkpoint")
-parser.add_argument("--logdir", default="run5", type=str, help="directory to save the tensorboard logs")
+parser.add_argument("--logdir", default="test", type=str, help="directory to save the tensorboard logs")
 parser.add_argument(
     "--pretrained_dir", default=None, type=str, help="pretrained checkpoint directory"
 )
@@ -54,7 +54,7 @@ parser.add_argument("--optim_name", default="adamw", type=str, help="optimizatio
 parser.add_argument("--reg_weight", default=1e-5, type=float, help="regularization weight")
 parser.add_argument("--momentum", default=0.99, type=float, help="momentum")
 parser.add_argument("--noamp", action="store_true", help="do NOT use amp for training")
-parser.add_argument("--val_every", default=20, type=int, help="validation frequency")
+parser.add_argument("--val_every", default=1, type=int, help="validation frequency")
 parser.add_argument("--distributed", action="store_true", help="start distributed training")
 parser.add_argument("--world_size", default=1, type=int, help="number of nodes for distributed training")
 parser.add_argument("--rank", default=0, type=int, help="node rank for distributed training")
@@ -102,7 +102,7 @@ parser.add_argument("--val_samples", default=20, type=int, help="number of sampl
 parser.add_argument("--train_sampling", default="uniform", type=str, help="sampling distribution of organs during training")
 parser.add_argument("--preprocessing", default=2, type=int, help="preprocessing option")
 parser.add_argument("--data_augmentation", action="store_false", help="use data augmentation during training")
-parser.add_argument("--additional_information", default="organ_classif", help="additional information provided to segmentation model")
+parser.add_argument("--additional_information", default="organ_late", help="additional information provided to segmentation model")
 parser.add_argument("--loss_combination_factor", default=1.0, type=float, help="combination factor for segmentation and classification losses")
 parser.add_argument("--classification_layer", default=6, type=int, help="Transformer layer for classification")
 
@@ -112,7 +112,7 @@ def main():
     args.amp = not args.noamp
     if args.additional_information == "modality_concat" or args.additional_information == "modality_concat2" or args.additional_information == "modality_add":
         args.logdir = "./runs_modality/" + args.logdir
-    elif args.additional_information == "organ" or args.additional_information == "organ_classif":
+    elif args.additional_information == "organ" or args.additional_information == "organ_classif" or args.additional_information == "organ_inter" or args.additional_information == "organ_late":
         args.logdir = "./runs_organ/" + args.logdir
     else:
         args.logdir = "./runs/" + args.logdir
@@ -180,7 +180,7 @@ def main_worker(gpu, args):
                 conv_block=True,
                 res_block=True,
                 dropout_rate=args.dropout_rate,
-                classification=False,
+                info_mode="early",
             )
         elif args.additional_information == "organ_classif":
             model = UNETR_2D_organ(
@@ -196,7 +196,39 @@ def main_worker(gpu, args):
                 conv_block=True,
                 res_block=True,
                 dropout_rate=args.dropout_rate,
-                classification=True,
+                info_mode="classif",
+            )
+        elif args.additional_information == "organ_inter":
+            model = UNETR_2D_organ(
+                in_channels=args.in_channels,
+                out_channels=args.out_channels,
+                img_size=(args.roi_x, args.roi_y),
+                feature_size=args.feature_size,
+                hidden_size=args.hidden_size,
+                mlp_dim=args.mlp_dim,
+                num_heads=args.num_heads,
+                pos_embed=args.pos_embed,
+                norm_name=args.norm_name,
+                conv_block=True,
+                res_block=True,
+                dropout_rate=args.dropout_rate,
+                info_mode="inter",
+            )
+        elif args.additional_information == "organ_late":
+            model = UNETR_2D_organ(
+                in_channels=args.in_channels,
+                out_channels=args.out_channels,
+                img_size=(args.roi_x, args.roi_y),
+                feature_size=args.feature_size,
+                hidden_size=args.hidden_size,
+                mlp_dim=args.mlp_dim,
+                num_heads=args.num_heads,
+                pos_embed=args.pos_embed,
+                norm_name=args.norm_name,
+                conv_block=True,
+                res_block=True,
+                dropout_rate=args.dropout_rate,
+                info_mode="late",
             )
         else:
             model = UNETR_2D(
