@@ -77,6 +77,7 @@ parser.add_argument("--classification_layer", default=12, type=int, help="Transf
 
 def calculate_accuracy(args, model, loader):
     accs_per_organ = {}
+    missed_per_organ = {}
     for idx, batch in enumerate(loader):
         val_inputs, val_labels = (batch["image"].cuda(), batch["label"].cuda())
         # img_name = batch["image_meta_dict"]["filename_or_obj"][0].split("/")[-1]
@@ -97,16 +98,26 @@ def calculate_accuracy(args, model, loader):
                 y_true = class_labels[i, organ-1, 0].item()
                 if y_pred == y_true:
                     accs_per_organ.setdefault(organ, [0])[0] += 1
+                if y_true == 1:
+                    missed_per_organ.setdefault(organ, [0, 0])[1] += 1
+                    if y_pred == False:
+                        missed_per_organ[organ][0] += 1
         print("{}/{} validation images processed".format(idx+1, len(loader)))
     # Calculate mean score per organ and overall
     total_acc = 0
+    total_missed = 0
     for organ in accs_per_organ:
         accs_per_organ[organ] = accs_per_organ[organ][0]/(len(loader)*class_logits.shape[0])
         total_acc += accs_per_organ[organ]
+    for organ in missed_per_organ:
+        missed_per_organ[organ] = missed_per_organ[organ][0]/missed_per_organ[organ][1]
+        total_missed += missed_per_organ[organ]
     mean_acc = total_acc/len(accs_per_organ)
+    mean_missed = total_missed/len(missed_per_organ)
     print("Overall classification accuracy: {}".format(mean_acc))
+    print("Overall missed predictions: {}".format(mean_missed))
 
-    return mean_acc, accs_per_organ
+    return mean_acc, accs_per_organ, mean_missed, missed_per_organ
 
 
 def main():
