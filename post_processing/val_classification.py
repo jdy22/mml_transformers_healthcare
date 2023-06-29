@@ -147,7 +147,7 @@ def main():
                 conv_block=True,
                 res_block=True,
                 dropout_rate=args.dropout_rate,
-                classification=True,
+                info_mode="classif",
             )
         else:
             print("Script can only be used for joint organ classification and segmentation models.")
