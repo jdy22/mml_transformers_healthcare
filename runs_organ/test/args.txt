@@ -54,8 +54,9 @@
   "train_sampling": "uniform",
   "preprocessing": 2,
   "data_augmentation": true,
-  "additional_information": "organ_classif",
+  "additional_information": "organ_inter",
   "loss_combination_factor": 1.0,
+  "classification_layer": 6,
   "amp": true,
   "gpu": 0,
   "test_mode": false

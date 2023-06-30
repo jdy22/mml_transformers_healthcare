@@ -1,6 +1,6 @@
 {
   "checkpoint": null,
-  "logdir": "./runs/rerun18",
+  "logdir": "./runs_organ/run7",
   "pretrained_dir": null,
   "data_dir": "./amos22/",
   "json_list": "dataset_internal_val.json",
@@ -54,7 +54,7 @@
   "train_sampling": "uniform",
   "preprocessing": 2,
   "data_augmentation": true,
-  "additional_information": null,
+  "additional_information": "organ_inter",
   "loss_combination_factor": 1.0,
   "classification_layer": 6,
   "amp": true,
