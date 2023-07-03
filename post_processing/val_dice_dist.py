@@ -28,7 +28,7 @@ from monai.utils.misc import set_determinism
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument(
-    "--pretrained_dir", default="./runs_organ/run7/", type=str, help="pretrained checkpoint directory"
+    "--pretrained_dir", default="./runs_organ/run1b/", type=str, help="pretrained checkpoint directory"
 )
 parser.add_argument("--data_dir", default="./amos22/", type=str, help="dataset directory")
 parser.add_argument("--json_list", default="dataset_internal_val.json", type=str, help="dataset json file")
@@ -74,7 +74,8 @@ parser.add_argument("--train_sampling", default="uniform", type=str, help="sampl
 parser.add_argument("--preprocessing", default=2, type=int, help="preprocessing option")
 parser.add_argument("--data_augmentation", action="store_false", help="use data augmentation during training")
 parser.add_argument("--distance_metric", default="hausdorff", type=str, help="distance metric for evaluation - hausdorff or nsd")
-parser.add_argument("--additional_information", default="organ_inter", help="additional information provided to segmentation model")
+parser.add_argument("--additional_information", default="organ", help="additional information provided to segmentation model")
+parser.add_argument("--test_without_labels", action="store_false", help="test early organ model without labels")
 
 
 nsd_thresholds_mm = {
@@ -110,6 +111,8 @@ def calculate_dice_hausdorff(args, model, loader, modality):
             val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="concat2")
         elif args.additional_information == "modality_add":
             val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="add")
+        elif args.additional_information == "organ" and args.test_without_labels:
+            val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, without_labels=True)
         elif args.additional_information == "organ" or args.additional_information == "organ_inter" or args.additional_information == "organ_late":
             val_inputs_full = torch.cat((val_inputs, val_labels), dim=1)
             val_outputs = sliding_window_inference(val_inputs_full, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap)
@@ -174,6 +177,8 @@ def calculate_dice_nsd(args, model, loader, modality):
             val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="concat2")
         elif args.additional_information == "modality_add":
             val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="add")
+        elif args.additional_information == "organ" and args.test_without_labels:
+            val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, without_labels=True)
         elif args.additional_information == "organ" or args.additional_information == "organ_inter" or args.additional_information == "organ_late":
             val_inputs_full = torch.cat((val_inputs, val_labels), dim=1)
             val_outputs = sliding_window_inference(val_inputs_full, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap)
