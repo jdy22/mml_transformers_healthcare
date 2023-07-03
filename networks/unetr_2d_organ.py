@@ -157,8 +157,8 @@ class ViT_organ(nn.Module):
                 "15" : nn.Parameter(torch.zeros(1, 1, hidden_size))
             })
 
-    def forward(self, x_in):
-        if self.classification:
+    def forward(self, x_in, without_labels=False):
+        if self.classification or without_labels:
             x = x_in
         else:
             # First channel of x_in: image
@@ -172,6 +172,8 @@ class ViT_organ(nn.Module):
         if self.classification:
             classification_tokens = self.classification_tokens.expand(x.shape[0], -1, -1)
             x_full = torch.cat((x, classification_tokens), dim=1)
+        elif without_labels:
+            x_full = x
         else:
             x_full = add_organ_info(x, labels, self.organ_tokens, self.no_organ_tokens)
  
@@ -180,10 +182,14 @@ class ViT_organ(nn.Module):
         for blk in self.blocks:
             x_full = blk(x_full)
             hidden_states_out.append(x_full[:, :n_patches, :])
-            hidden_organs_out.append(x_full[:, n_patches:, :])
+            if not without_labels:
+                hidden_organs_out.append(x_full[:, n_patches:, :])
         x_full = self.norm(x_full)
         x_out = x_full[:, :n_patches, :]
-        organs_out = x_full[:, n_patches:, :]
+        if not without_labels:
+            organs_out = x_full[:, n_patches:, :]
+        else:
+            organs_out = None
 
         return x_out, hidden_states_out, organs_out, hidden_organs_out
 
@@ -460,15 +466,15 @@ class UNETR_2D_organ(nn.Module):
         x = x.permute(0, 3, 1, 2).contiguous()
         return x
 
-    def forward(self, x_in, test_mode=None, class_layer=None):
+    def forward(self, x_in, without_labels=False, test_mode=None, class_layer=None):
         if self.info_mode == "early" or self.info_mode == "classif":
-            x, hidden_states_out, organs_out, hidden_organs_out = self.vit(x_in)
+            x, hidden_states_out, organs_out, hidden_organs_out = self.vit(x_in, without_labels)
         elif self.info_mode == "inter" or self.info_mode == "late":
             x = x_in[:, None, 0, :, :]
             labels = x_in[:, 1, :, :]
             x, hidden_states_out = self.vit(x)
 
-        if self.classification:
+        if self.classification or without_labels:
             enc1 = self.encoder1(x_in)
         else:
             enc1 = self.encoder1(x_in[:, None, 0, :, :])
@@ -531,11 +537,15 @@ if __name__ == "__main__":
         conv_block=True,
         res_block=True,
         dropout_rate=0.0,
-        info_mode="late",
+        info_mode="early",
     )
 
-    x = torch.zeros((40, 2, 112, 112))
-    logits = model(x)
+    # x = torch.zeros((40, 2, 112, 112))
+    # logits = model(x)
+    # print(logits.shape)
+
+    x = torch.zeros((40, 1, 112, 112))
+    logits = model(x, without_labels=True)
     print(logits.shape)
 
     # x = torch.zeros((40, 1, 112, 112))
