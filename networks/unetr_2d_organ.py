@@ -230,7 +230,7 @@ class UNETR_2D_organ(nn.Module):
             conv_block: bool argument to determine if convolutional block is used.
             res_block: bool argument to determine if residual block is used.
             dropout_rate: faction of the input units to drop.
-            info_mode: early, inter, late or classif.
+            info_mode: early, inter, inter2, inter3, late or classif.
 
         Examples::
 
@@ -281,7 +281,7 @@ class UNETR_2D_organ(nn.Module):
                 spatial_dims=2,
                 classification=self.classification,
             )
-        elif self.info_mode == "inter" or self.info_mode == "late":
+        elif self.info_mode == "inter" or self.info_mode == "inter2" or self.info_mode == "inter3" or self.info_mode == "late":
             self.vit = ViT(
                 in_channels=in_channels,
                 img_size=img_size,
@@ -306,8 +306,12 @@ class UNETR_2D_organ(nn.Module):
             res_block=res_block,
         )
 
-        if self.info_mode == "inter":
-            decoder_input_size = hidden_size + 15
+        if self.info_mode == "inter" or self.info_mode == "inter2" or self.info_mode == "inter3":
+            decoder_input_size_bottleneck = hidden_size + 15
+            if self.info_mode == "inter" or self.info_mode == "inter2":
+                decoder_input_size_skip = hidden_size + 15
+            elif self.info_mode == "inter3":
+                decoder_input_size_skip = hidden_size
             self.organ_tokens = nn.ParameterDict({
                 "1" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
                 "2" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
@@ -342,11 +346,115 @@ class UNETR_2D_organ(nn.Module):
                 "14" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
                 "15" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1]))
             })
+            if self.info_mode == "inter2":
+                self.organ_tokens2 = nn.ParameterDict({
+                    "1" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "2" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "3" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "4" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "5" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "6" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "7" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "8" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "9" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "10" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "11" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "12" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "13" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "14" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "15" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1]))
+                })
+                self.no_organ_tokens2 = nn.ParameterDict({
+                    "1" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "2" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "3" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "4" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "5" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "6" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "7" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "8" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "9" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "10" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "11" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "12" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "13" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "14" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "15" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1]))
+                })
+                self.organ_tokens3 = nn.ParameterDict({
+                    "1" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "2" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "3" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "4" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "5" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "6" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "7" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "8" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "9" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "10" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "11" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "12" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "13" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "14" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "15" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1]))
+                })
+                self.no_organ_tokens3 = nn.ParameterDict({
+                    "1" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "2" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "3" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "4" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "5" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "6" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "7" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "8" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "9" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "10" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "11" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "12" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "13" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "14" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "15" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1]))
+                })
+                self.organ_tokens4 = nn.ParameterDict({
+                    "1" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "2" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "3" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "4" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "5" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "6" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "7" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "8" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "9" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "10" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "11" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "12" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "13" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "14" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "15" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1]))
+                })
+                self.no_organ_tokens4 = nn.ParameterDict({
+                    "1" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "2" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "3" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "4" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "5" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "6" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "7" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "8" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "9" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "10" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "11" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "12" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "13" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "14" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
+                    "15" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1]))
+                })
         elif self.info_mode == "early" or self.info_mode == "late" or self.info_mode == "classif":
-            decoder_input_size = hidden_size
+            decoder_input_size_bottleneck = hidden_size
+            decoder_input_size_skip = hidden_size
         self.encoder2 = UnetrPrUpBlock(
             spatial_dims=2,
-            in_channels=decoder_input_size,
+            in_channels=decoder_input_size_skip,
             out_channels=feature_size * 2,
             num_layer=2,
             kernel_size=3,
@@ -358,7 +466,7 @@ class UNETR_2D_organ(nn.Module):
         )
         self.encoder3 = UnetrPrUpBlock(
             spatial_dims=2,
-            in_channels=decoder_input_size,
+            in_channels=decoder_input_size_skip,
             out_channels=feature_size * 4,
             num_layer=1,
             kernel_size=3,
@@ -370,7 +478,7 @@ class UNETR_2D_organ(nn.Module):
         )
         self.encoder4 = UnetrPrUpBlock(
             spatial_dims=2,
-            in_channels=decoder_input_size,
+            in_channels=decoder_input_size_skip,
             out_channels=feature_size * 8,
             num_layer=0,
             kernel_size=3,
@@ -382,7 +490,7 @@ class UNETR_2D_organ(nn.Module):
         )
         self.decoder5 = UnetrUpBlock(
             spatial_dims=2,
-            in_channels=decoder_input_size,
+            in_channels=decoder_input_size_bottleneck,
             out_channels=feature_size * 8,
             kernel_size=3,
             upsample_kernel_size=2,
@@ -454,7 +562,7 @@ class UNETR_2D_organ(nn.Module):
                 "14" : nn.Parameter(torch.zeros(1, 1, self.img_size[0], self.img_size[1])),
                 "15" : nn.Parameter(torch.zeros(1, 1, self.img_size[0], self.img_size[1]))
             })
-        elif self.info_mode == "early" or self.info_mode == "inter" or self.info_mode == "classif":
+        elif self.info_mode == "early" or self.info_mode == "inter" or self.info_mode == "inter2" or self.info_mode == "inter3" or self.info_mode == "classif":
             output_input_size = feature_size
         self.out = UnetOutBlock(spatial_dims=2, in_channels=output_input_size, out_channels=out_channels)
 
@@ -469,7 +577,7 @@ class UNETR_2D_organ(nn.Module):
     def forward(self, x_in, without_labels=False, test_mode=None, class_layer=None):
         if self.info_mode == "early" or self.info_mode == "classif":
             x, hidden_states_out, organs_out, hidden_organs_out = self.vit(x_in, without_labels)
-        elif self.info_mode == "inter" or self.info_mode == "late":
+        elif self.info_mode == "inter" or self.info_mode == "inter2" or self.info_mode == "inter3" or self.info_mode == "late":
             x = x_in[:, None, 0, :, :]
             labels = x_in[:, 1, :, :]
             x, hidden_states_out = self.vit(x)
@@ -483,22 +591,28 @@ class UNETR_2D_organ(nn.Module):
         x2 = self.proj_feat(x2, self.hidden_size, self.feat_size)
         if self.info_mode == "inter":
             x2 = add_organ_info(x2, labels, self.organ_tokens, self.no_organ_tokens)
+        elif self.info_mode == "inter2":
+            x2 = add_organ_info(x2, labels, self.organ_tokens2, self.no_organ_tokens2)
         enc2 = self.encoder2(x2)
 
         x3 = hidden_states_out[5]
         x3 = self.proj_feat(x3, self.hidden_size, self.feat_size)
         if self.info_mode == "inter":
             x3 = add_organ_info(x3, labels, self.organ_tokens, self.no_organ_tokens)
+        elif self.info_mode == "inter2":
+            x3 = add_organ_info(x3, labels, self.organ_tokens3, self.no_organ_tokens3)
         enc3 = self.encoder3(x3)
 
         x4 = hidden_states_out[8]
         x4 = self.proj_feat(x4, self.hidden_size, self.feat_size)
         if self.info_mode == "inter":
             x4 = add_organ_info(x4, labels, self.organ_tokens, self.no_organ_tokens)
+        elif self.info_mode == "inter2":
+            x4 = add_organ_info(x4, labels, self.organ_tokens4, self.no_organ_tokens4)
         enc4 = self.encoder4(x4)
 
         dec4 = self.proj_feat(x, self.hidden_size, self.feat_size)
-        if self.info_mode == "inter":
+        if self.info_mode == "inter" or self.info_mode == "inter2" or self.info_mode == "inter3":
             dec4 = add_organ_info(dec4, labels, self.organ_tokens, self.no_organ_tokens)
         dec3 = self.decoder5(dec4, enc4)
 
@@ -537,16 +651,16 @@ if __name__ == "__main__":
         conv_block=True,
         res_block=True,
         dropout_rate=0.0,
-        info_mode="early",
+        info_mode="inter3",
     )
 
-    # x = torch.zeros((40, 2, 112, 112))
-    # logits = model(x)
-    # print(logits.shape)
-
-    x = torch.zeros((40, 1, 112, 112))
-    logits = model(x, without_labels=True)
+    x = torch.zeros((40, 2, 112, 112))
+    logits = model(x)
     print(logits.shape)
+
+    # x = torch.zeros((40, 1, 112, 112))
+    # logits = model(x, without_labels=True)
+    # print(logits.shape)
 
     # x = torch.zeros((40, 1, 112, 112))
     # seg_logits, class_logits = model(x, test_mode=False, class_layer=3)
