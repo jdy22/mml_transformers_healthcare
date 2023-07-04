@@ -35,10 +35,10 @@ from monai.transforms import Activations, AsDiscrete, Compose
 from monai.utils.enums import MetricReduction
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
-parser.add_argument("--checkpoint", default="./runs_modality/run3-2/model.pt", help="start training from saved checkpoint")
-parser.add_argument("--logdir", default="run3-2b", type=str, help="directory to save the tensorboard logs")
+parser.add_argument("--checkpoint", default=None, help="start training from saved checkpoint")
+parser.add_argument("--logdir", default="run8", type=str, help="directory to save the tensorboard logs")
 parser.add_argument(
-    "--pretrained_dir", default="./runs_modality/run3-2/", type=str, help="pretrained checkpoint directory"
+    "--pretrained_dir", default=None, type=str, help="pretrained checkpoint directory"
 )
 parser.add_argument("--data_dir", default="./amos22/", type=str, help="dataset directory")
 parser.add_argument("--json_list", default="dataset_internal_val.json", type=str, help="dataset json file")
@@ -91,7 +91,7 @@ parser.add_argument("--dropout_rate", default=0.0, type=float, help="dropout rat
 parser.add_argument("--infer_overlap", default=0.5, type=float, help="sliding window inference overlap")
 parser.add_argument("--lrschedule", default="warmup_cosine", type=str, help="type of learning rate scheduler")
 parser.add_argument("--warmup_epochs", default=50, type=int, help="number of warmup epochs")
-parser.add_argument("--resume_ckpt", action="store_false", help="resume training from pretrained checkpoint")
+parser.add_argument("--resume_ckpt", action="store_true", help="resume training from pretrained checkpoint")
 parser.add_argument("--resume_jit", action="store_true", help="resume training from pretrained torchscript checkpoint")
 parser.add_argument("--smooth_dr", default=1e-6, type=float, help="constant added to dice denominator to avoid nan")
 parser.add_argument("--smooth_nr", default=0.0, type=float, help="constant added to dice numerator to avoid zero")
@@ -102,7 +102,7 @@ parser.add_argument("--val_samples", default=20, type=int, help="number of sampl
 parser.add_argument("--train_sampling", default="uniform", type=str, help="sampling distribution of organs during training")
 parser.add_argument("--preprocessing", default=2, type=int, help="preprocessing option")
 parser.add_argument("--data_augmentation", action="store_false", help="use data augmentation during training")
-parser.add_argument("--additional_information", default="modality_concat2", help="additional information provided to segmentation model")
+parser.add_argument("--additional_information", default="organ_inter2", help="additional information provided to segmentation model")
 parser.add_argument("--loss_combination_factor", default=1.0, type=float, help="combination factor for segmentation and classification losses")
 parser.add_argument("--classification_layer", default=6, type=int, help="Transformer layer for classification")
 
@@ -112,7 +112,7 @@ def main():
     args.amp = not args.noamp
     if args.additional_information == "modality_concat" or args.additional_information == "modality_concat2" or args.additional_information == "modality_add":
         args.logdir = "./runs_modality/" + args.logdir
-    elif args.additional_information == "organ" or args.additional_information == "organ_classif" or args.additional_information == "organ_inter" or args.additional_information == "organ_late":
+    elif args.additional_information == "organ" or args.additional_information == "organ_classif" or args.additional_information == "organ_inter" or args.additional_information == "organ_inter2" or args.additional_information == "organ_inter3" or args.additional_information == "organ_late":
         args.logdir = "./runs_organ/" + args.logdir
     else:
         args.logdir = "./runs/" + args.logdir
@@ -213,6 +213,38 @@ def main_worker(gpu, args):
                 res_block=True,
                 dropout_rate=args.dropout_rate,
                 info_mode="inter",
+            )
+        elif args.additional_information == "organ_inter2":
+            model = UNETR_2D_organ(
+                in_channels=args.in_channels,
+                out_channels=args.out_channels,
+                img_size=(args.roi_x, args.roi_y),
+                feature_size=args.feature_size,
+                hidden_size=args.hidden_size,
+                mlp_dim=args.mlp_dim,
+                num_heads=args.num_heads,
+                pos_embed=args.pos_embed,
+                norm_name=args.norm_name,
+                conv_block=True,
+                res_block=True,
+                dropout_rate=args.dropout_rate,
+                info_mode="inter2",
+            )
+        elif args.additional_information == "organ_inter3":
+            model = UNETR_2D_organ(
+                in_channels=args.in_channels,
+                out_channels=args.out_channels,
+                img_size=(args.roi_x, args.roi_y),
+                feature_size=args.feature_size,
+                hidden_size=args.hidden_size,
+                mlp_dim=args.mlp_dim,
+                num_heads=args.num_heads,
+                pos_embed=args.pos_embed,
+                norm_name=args.norm_name,
+                conv_block=True,
+                res_block=True,
+                dropout_rate=args.dropout_rate,
+                info_mode="inter3",
             )
         elif args.additional_information == "organ_late":
             model = UNETR_2D_organ(
