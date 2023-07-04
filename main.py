@@ -35,10 +35,10 @@ from monai.transforms import Activations, AsDiscrete, Compose
 from monai.utils.enums import MetricReduction
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
-parser.add_argument("--checkpoint", default="./runs/rerun18-2/model.pt", help="start training from saved checkpoint")
-parser.add_argument("--logdir", default="rerun18-2b", type=str, help="directory to save the tensorboard logs")
+parser.add_argument("--checkpoint", default="./runs_modality/rerun1-2/model.pt", help="start training from saved checkpoint")
+parser.add_argument("--logdir", default="rerun1-2b", type=str, help="directory to save the tensorboard logs")
 parser.add_argument(
-    "--pretrained_dir", default="./runs/rerun18-2/", type=str, help="pretrained checkpoint directory"
+    "--pretrained_dir", default="./runs_modality/rerun1-2/", type=str, help="pretrained checkpoint directory"
 )
 parser.add_argument("--data_dir", default="./amos22/", type=str, help="dataset directory")
 parser.add_argument("--json_list", default="dataset_internal_val.json", type=str, help="dataset json file")
@@ -102,7 +102,7 @@ parser.add_argument("--val_samples", default=20, type=int, help="number of sampl
 parser.add_argument("--train_sampling", default="uniform", type=str, help="sampling distribution of organs during training")
 parser.add_argument("--preprocessing", default=2, type=int, help="preprocessing option")
 parser.add_argument("--data_augmentation", action="store_false", help="use data augmentation during training")
-parser.add_argument("--additional_information", default=None, help="additional information provided to segmentation model")
+parser.add_argument("--additional_information", default="modality_concat", help="additional information provided to segmentation model")
 parser.add_argument("--loss_combination_factor", default=1.0, type=float, help="combination factor for segmentation and classification losses")
 parser.add_argument("--classification_layer", default=6, type=int, help="Transformer layer for classification")
 
