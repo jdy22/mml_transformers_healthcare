@@ -50,6 +50,33 @@ def add_organ_info(x, labels, organ_tokens, no_organ_tokens):
     return x_full
 
 
+def add_organ_info2(x, class_logits, organ_tokens, no_organ_tokens):
+    """
+    x : Feature vectors/maps to add organ information to
+    class_logits : To indicate which organs are present, must have same batch dimension as x
+    organ_tokens and no_organ_tokens : Parameter Dicts with relevant tokens to add
+    Information is added along dimension 1 (patch/channel dimension)
+    """
+    batch_size = x.shape[0]
+    x_full = x[None, 0]
+    logits = class_logits[0]
+    for organ in range(1, 16):
+        if logits[organ-1, 0].item() > 0:
+            x_full = torch.cat((x_full, organ_tokens[str(organ)]), dim=1)
+        else:
+            x_full = torch.cat((x_full, no_organ_tokens[str(organ)]), dim=1)
+    for i in range(1, batch_size):
+        embeddings = x[None, i]
+        logits = class_logits[i]
+        for organ in range(1, 16):
+            if logits[organ-1, 0].item() > 0:
+                embeddings = torch.cat((embeddings, organ_tokens[str(organ)]), dim=1)
+            else:
+                embeddings = torch.cat((embeddings, no_organ_tokens[str(organ)]), dim=1)
+        x_full = torch.cat((x_full, embeddings), dim=0)
+    return x_full
+
+
 class ViT_organ(nn.Module):
     """
     Vision Transformer (ViT), based on: "Dosovitskiy et al.,
@@ -72,6 +99,7 @@ class ViT_organ(nn.Module):
         post_activation="Tanh",
         qkv_bias: bool = False,
         classification: bool = False,
+        classification_concat: bool = False
     ) -> None:
         """
         Args:
@@ -103,6 +131,7 @@ class ViT_organ(nn.Module):
         
         self.hidden_size = hidden_size
         self.classification = classification
+        self.classification_concat = classification_concat
 
         self.patch_embedding = PatchEmbeddingBlock(
             in_channels=in_channels,
@@ -121,6 +150,44 @@ class ViT_organ(nn.Module):
 
         if self.classification:
             self.classification_tokens = nn.Parameter(torch.zeros(1, 15, hidden_size))
+            self.classification_head = nn.Linear(in_features=hidden_size, out_features=1)
+        elif self.classification_concat:
+            self.classification_tokens = nn.Parameter(torch.zeros(1, 15, hidden_size))
+            self.classification_head = nn.Linear(in_features=hidden_size, out_features=1)
+            self.organ_tokens = nn.ParameterDict({
+                "1" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "2" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "3" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "4" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "5" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "6" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "7" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "8" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "9" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "10" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "11" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "12" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "13" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "14" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "15" : nn.Parameter(torch.zeros(1, 1, hidden_size))
+            })
+            self.no_organ_tokens = nn.ParameterDict({
+                "1" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "2" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "3" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "4" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "5" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "6" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "7" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "8" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "9" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "10" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "11" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "12" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "13" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "14" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
+                "15" : nn.Parameter(torch.zeros(1, 1, hidden_size))
+            })
         else:
             self.organ_tokens = nn.ParameterDict({
                 "1" : nn.Parameter(torch.zeros(1, 1, hidden_size)),
@@ -157,8 +224,8 @@ class ViT_organ(nn.Module):
                 "15" : nn.Parameter(torch.zeros(1, 1, hidden_size))
             })
 
-    def forward(self, x_in, without_labels=False):
-        if self.classification or without_labels:
+    def forward(self, x_in, without_labels=False, class_layer=12):
+        if self.classification or self.classification_concat or without_labels:
             x = x_in
         else:
             # First channel of x_in: image
@@ -169,7 +236,7 @@ class ViT_organ(nn.Module):
         x = self.patch_embedding(x)
         n_patches = x.shape[1]
 
-        if self.classification:
+        if self.classification or self.classification_concat:
             classification_tokens = self.classification_tokens.expand(x.shape[0], -1, -1)
             x_full = torch.cat((x, classification_tokens), dim=1)
         elif without_labels:
@@ -178,20 +245,19 @@ class ViT_organ(nn.Module):
             x_full = add_organ_info(x, labels, self.organ_tokens, self.no_organ_tokens)
  
         hidden_states_out = []
-        hidden_organs_out = []
-        for blk in self.blocks:
-            x_full = blk(x_full)
+        class_logits = None
+        for i in range(len(self.blocks)):
+            x_full = self.blocks[i](x_full)
             hidden_states_out.append(x_full[:, :n_patches, :])
-            if not without_labels:
-                hidden_organs_out.append(x_full[:, n_patches:, :])
+            if self.classification or self.classification_concat:
+                if i == class_layer-1:
+                    class_logits = self.classification_head(x_full[:, n_patches:, :])
+                    if self.classification_concat:
+                        x_full = add_organ_info2(x_full[:, :n_patches, :], class_logits, self.organ_tokens, self.no_organ_tokens)
         x_full = self.norm(x_full)
         x_out = x_full[:, :n_patches, :]
-        if not without_labels:
-            organs_out = x_full[:, n_patches:, :]
-        else:
-            organs_out = None
 
-        return x_out, hidden_states_out, organs_out, hidden_organs_out
+        return x_out, hidden_states_out, class_logits
 
 
 class UNETR_2D_organ(nn.Module):
@@ -230,7 +296,7 @@ class UNETR_2D_organ(nn.Module):
             conv_block: bool argument to determine if convolutional block is used.
             res_block: bool argument to determine if residual block is used.
             dropout_rate: faction of the input units to drop.
-            info_mode: early, inter, inter2, inter3, late or classif.
+            info_mode: early, inter, inter2, inter3, late, classif, classif_early.
 
         Examples::
 
@@ -264,10 +330,15 @@ class UNETR_2D_organ(nn.Module):
         self.info_mode = info_mode
         if self.info_mode == "classif":
             self.classification = True
+            self.classification_concat = False
+        elif self.info_mode == "classif_early":
+            self.classification = False
+            self.classification_concat = True
         else:
             self.classification = False
+            self.classification_concat = False
 
-        if self.info_mode == "early" or self.info_mode == "classif":
+        if self.info_mode == "early" or self.info_mode == "classif" or self.info_mode == "classif_early":
             self.vit = ViT_organ(
                 in_channels=in_channels,
                 img_size=img_size,
@@ -280,6 +351,7 @@ class UNETR_2D_organ(nn.Module):
                 dropout_rate=dropout_rate,
                 spatial_dims=2,
                 classification=self.classification,
+                classification_concat=self.classification_concat,
             )
         elif self.info_mode == "inter" or self.info_mode == "inter2" or self.info_mode == "inter3" or self.info_mode == "late":
             self.vit = ViT(
@@ -449,7 +521,7 @@ class UNETR_2D_organ(nn.Module):
                     "14" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
                     "15" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1]))
                 })
-        elif self.info_mode == "early" or self.info_mode == "late" or self.info_mode == "classif":
+        elif self.info_mode == "early" or self.info_mode == "late" or self.info_mode == "classif" or self.info_mode == "classif_early":
             decoder_input_size_bottleneck = hidden_size
             decoder_input_size_skip = hidden_size
         self.encoder2 = UnetrPrUpBlock(
@@ -562,27 +634,24 @@ class UNETR_2D_organ(nn.Module):
                 "14" : nn.Parameter(torch.zeros(1, 1, self.img_size[0], self.img_size[1])),
                 "15" : nn.Parameter(torch.zeros(1, 1, self.img_size[0], self.img_size[1]))
             })
-        elif self.info_mode == "early" or self.info_mode == "inter" or self.info_mode == "inter2" or self.info_mode == "inter3" or self.info_mode == "classif":
+        elif self.info_mode == "early" or self.info_mode == "inter" or self.info_mode == "inter2" or self.info_mode == "inter3" or self.info_mode == "classif" or self.info_mode == "classif_early":
             output_input_size = feature_size
         self.out = UnetOutBlock(spatial_dims=2, in_channels=output_input_size, out_channels=out_channels)
-
-        if self.classification:
-            self.classification_head = nn.Linear(in_features=hidden_size, out_features=1)
 
     def proj_feat(self, x, hidden_size, feat_size):
         x = x.view(x.size(0), feat_size[0], feat_size[1], hidden_size)
         x = x.permute(0, 3, 1, 2).contiguous()
         return x
 
-    def forward(self, x_in, without_labels=False, test_mode=None, class_layer=None):
-        if self.info_mode == "early" or self.info_mode == "classif":
-            x, hidden_states_out, organs_out, hidden_organs_out = self.vit(x_in, without_labels)
+    def forward(self, x_in, without_labels=False, test_mode=False, class_layer=12):
+        if self.info_mode == "early" or self.info_mode == "classif" or self.info_mode == "classif_early":
+            x, hidden_states_out, class_logits = self.vit(x_in, without_labels, class_layer)
         elif self.info_mode == "inter" or self.info_mode == "inter2" or self.info_mode == "inter3" or self.info_mode == "late":
             x = x_in[:, None, 0, :, :]
             labels = x_in[:, 1, :, :]
             x, hidden_states_out = self.vit(x)
 
-        if self.classification or without_labels:
+        if self.classification or self.classification_concat or without_labels:
             enc1 = self.encoder1(x_in)
         else:
             enc1 = self.encoder1(x_in[:, None, 0, :, :])
@@ -624,14 +693,10 @@ class UNETR_2D_organ(nn.Module):
             out = add_organ_info(out, labels, self.organ_tokens, self.no_organ_tokens)
         seg_logits = self.out(out)
 
-        if self.classification:
+        if self.classification or self.classification_concat:
             if test_mode:
                 return seg_logits
             else:
-                if class_layer == 12:
-                    class_logits = self.classification_head(organs_out)
-                else:
-                    class_logits = self.classification_head(hidden_organs_out[class_layer-1])
                 return seg_logits, class_logits
         else:
             return seg_logits
@@ -651,18 +716,18 @@ if __name__ == "__main__":
         conv_block=True,
         res_block=True,
         dropout_rate=0.0,
-        info_mode="inter3",
+        info_mode="classif_early",
     )
 
-    x = torch.zeros((40, 2, 112, 112))
-    logits = model(x)
-    print(logits.shape)
+    # x = torch.zeros((40, 2, 112, 112))
+    # logits = model(x)
+    # print(logits.shape)
 
     # x = torch.zeros((40, 1, 112, 112))
     # logits = model(x, without_labels=True)
     # print(logits.shape)
 
-    # x = torch.zeros((40, 1, 112, 112))
-    # seg_logits, class_logits = model(x, test_mode=False, class_layer=3)
-    # print(seg_logits.shape)
-    # print(class_logits.shape)
+    x = torch.zeros((40, 1, 112, 112))
+    seg_logits, class_logits = model(x, test_mode=False, class_layer=6)
+    print(seg_logits.shape)
+    print(class_logits.shape)
