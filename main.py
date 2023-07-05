@@ -36,7 +36,7 @@ from monai.utils.enums import MetricReduction
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument("--checkpoint", default=None, help="start training from saved checkpoint")
-parser.add_argument("--logdir", default="run9", type=str, help="directory to save the tensorboard logs")
+parser.add_argument("--logdir", default="run10", type=str, help="directory to save the tensorboard logs")
 parser.add_argument(
     "--pretrained_dir", default=None, type=str, help="pretrained checkpoint directory"
 )
@@ -102,17 +102,17 @@ parser.add_argument("--val_samples", default=20, type=int, help="number of sampl
 parser.add_argument("--train_sampling", default="uniform", type=str, help="sampling distribution of organs during training")
 parser.add_argument("--preprocessing", default=2, type=int, help="preprocessing option")
 parser.add_argument("--data_augmentation", action="store_false", help="use data augmentation during training")
-parser.add_argument("--additional_information", default="organ_inter3", help="additional information provided to segmentation model")
+parser.add_argument("--additional_information", default="organ_classif_early", help="additional information provided to segmentation model")
 parser.add_argument("--loss_combination_factor", default=1.0, type=float, help="combination factor for segmentation and classification losses")
-parser.add_argument("--classification_layer", default=6, type=int, help="Transformer layer for classification")
+parser.add_argument("--classification_layer", default=3, type=int, help="Transformer layer for classification")
 
 
 def main():
     args = parser.parse_args()
     args.amp = not args.noamp
-    if args.additional_information == "modality_concat" or args.additional_information == "modality_concat2" or args.additional_information == "modality_add":
+    if "modality" in args.additional_information:
         args.logdir = "./runs_modality/" + args.logdir
-    elif args.additional_information == "organ" or args.additional_information == "organ_classif" or args.additional_information == "organ_inter" or args.additional_information == "organ_inter2" or args.additional_information == "organ_inter3" or args.additional_information == "organ_late":
+    elif "organ" in args.additional_information:
         args.logdir = "./runs_organ/" + args.logdir
     else:
         args.logdir = "./runs/" + args.logdir
@@ -197,6 +197,22 @@ def main_worker(gpu, args):
                 res_block=True,
                 dropout_rate=args.dropout_rate,
                 info_mode="classif",
+            )
+        elif args.additional_information == "organ_classif_early":
+            model = UNETR_2D_organ(
+                in_channels=args.in_channels,
+                out_channels=args.out_channels,
+                img_size=(args.roi_x, args.roi_y),
+                feature_size=args.feature_size,
+                hidden_size=args.hidden_size,
+                mlp_dim=args.mlp_dim,
+                num_heads=args.num_heads,
+                pos_embed=args.pos_embed,
+                norm_name=args.norm_name,
+                conv_block=True,
+                res_block=True,
+                dropout_rate=args.dropout_rate,
+                info_mode="classif_early",
             )
         elif args.additional_information == "organ_inter":
             model = UNETR_2D_organ(
@@ -292,7 +308,7 @@ def main_worker(gpu, args):
         raise ValueError("Unsupported model " + str(args.model_name))
 
     dice_loss = DiceCELoss(to_onehot_y=True, softmax=True, squared_pred=True, smooth_nr=args.smooth_nr, smooth_dr=args.smooth_dr)
-    if args.additional_information == "organ_classif":
+    if "organ_classif" in args.additional_information:
         bce_loss = torch.nn.BCEWithLogitsLoss()
         loss_func = [dice_loss, bce_loss]
     else:

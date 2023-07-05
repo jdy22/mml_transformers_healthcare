@@ -55,7 +55,7 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args):
     model.train()
     start_time = time.time()
     run_loss = AverageMeter()
-    if args.additional_information == "organ_classif":
+    if "organ_classif" in args.additional_information:
         run_seg_loss = AverageMeter()
         run_class_loss = AverageMeter()
     for idx, batch_data in enumerate(loader):
@@ -84,12 +84,12 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args):
             elif args.additional_information == "organ" or args.additional_information == "organ_inter" or args.additional_information == "organ_inter2" or args.additional_information == "organ_inter3" or args.additional_information == "organ_late":
                 data_in = torch.cat((data, target), dim=1)
                 logits = model(data_in)
-            elif args.additional_information == "organ_classif":
+            elif "organ_classif" in args.additional_information:
                 seg_logits, class_logits = model(data, test_mode=False, class_layer=args.classification_layer)
             else:
                 logits = model(data)
 
-            if args.additional_information == "organ_classif":
+            if "organ_classif" in args.additional_information:
                 seg_loss = loss_func[0](seg_logits, target)
                 class_labels = torch.zeros((class_logits.shape[0], class_logits.shape[1]+1, 1))
                 for i in range(class_logits.shape[0]):
@@ -113,11 +113,11 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args):
             )
         else:
             run_loss.update(loss.item(), n=args.batch_size)
-            if args.additional_information == "organ_classif":
+            if "organ_classif" in args.additional_information:
                 run_seg_loss.update(seg_loss.item(), n=args.batch_size)
                 run_class_loss.update(class_loss.item(), n=args.batch_size)
         if args.rank == 0:
-            if args.additional_information == "organ_classif":
+            if "organ_classif" in args.additional_information:
                 print(
                     "Epoch {}/{} {}/{}".format(epoch, args.max_epochs, idx, len(loader)),
                     "total loss: {:.4f}".format(run_loss.avg),
@@ -168,8 +168,8 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
                     elif args.additional_information == "organ" or args.additional_information == "organ_inter" or args.additional_information == "organ_inter2" or args.additional_information == "organ_inter3" or args.additional_information == "organ_late":
                         data_in = torch.cat((data, target), dim=1)
                         logits = model_inferer(data_in)
-                    elif args.additional_information == "organ_classif":
-                        logits = model_inferer(data, test_mode=True)
+                    elif "organ_classif" in args.additional_information:
+                        logits = model_inferer(data, test_mode=True, class_layer=args.classification_layer)
                     else:
                         logits = model_inferer(data)
                 else:
