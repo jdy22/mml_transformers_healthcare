@@ -9,6 +9,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### TO DO: UPDATE TO USE TEST SET
+
 import argparse
 import os
 
