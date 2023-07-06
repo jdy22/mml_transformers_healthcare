@@ -2,9 +2,12 @@ import torch
 import clip
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-model, preprocess = clip.load("ViT-B/16", device=device)
+model, preprocess = clip.load("ViT-B/32", device=device)
 
-prompts = "a computerized tomography"
+prompts = [
+    "a computerized tomography",
+    "a magnetic resonance image"
+           ]
 
 text_tokens = clip.tokenize(prompts).to(device)
 with torch.no_grad():
