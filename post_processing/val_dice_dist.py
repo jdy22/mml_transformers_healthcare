@@ -107,7 +107,7 @@ def calculate_dice_hausdorff(args, model, loader, modality):
         # print("Inference on case {}".format(img_name))
         if args.additional_information == "modality_concat":
             val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="concat")
-        if args.additional_information == "modality_concat2":
+        elif args.additional_information == "modality_concat2":
             val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="concat2")
         elif args.additional_information == "modality_add":
             val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="add")
@@ -173,7 +173,7 @@ def calculate_dice_nsd(args, model, loader, modality):
         # print("Inference on case {}".format(img_name))
         if args.additional_information == "modality_concat":
             val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="concat")
-        if args.additional_information == "modality_concat2":
+        elif args.additional_information == "modality_concat2":
             val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="concat2")
         elif args.additional_information == "modality_add":
             val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="add")
