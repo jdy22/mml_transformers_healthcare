@@ -86,11 +86,11 @@ def visualise_predictions(args, model, loader, modality, image_index, num_sample
                 val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="concat2")
             elif args.additional_information == "modality_add":
                 val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="add")
-            elif args.additional_information == "organ" or args.additional_information == "organ_inter" or args.additional_information == "organ_late":
+            elif args.additional_information == "organ" or args.additional_information == "organ_inter" or args.additional_information == "organ_inter2" or args.additional_information == "organ_inter3" or args.additional_information == "organ_late":
                 val_inputs_full = torch.cat((val_inputs, val_labels), dim=1)
                 val_outputs = sliding_window_inference(val_inputs_full, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap)
-            elif args.additional_information == "organ_classif":
-                val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, test_mode=True)
+            elif "organ_classif" in args.additional_information:
+                val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, test_mode=True, class_layer=args.classification_layer)
             else:
                 val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap)
             val_outputs = torch.softmax(val_outputs, 1).cpu().numpy()
@@ -169,6 +169,22 @@ def main():
                 dropout_rate=args.dropout_rate,
                 info_mode="classif",
             )
+        elif args.additional_information == "organ_classif_early":
+            model = UNETR_2D_organ(
+                in_channels=args.in_channels,
+                out_channels=args.out_channels,
+                img_size=(args.roi_x, args.roi_y),
+                feature_size=args.feature_size,
+                hidden_size=args.hidden_size,
+                mlp_dim=args.mlp_dim,
+                num_heads=args.num_heads,
+                pos_embed=args.pos_embed,
+                norm_name=args.norm_name,
+                conv_block=True,
+                res_block=True,
+                dropout_rate=args.dropout_rate,
+                info_mode="classif_early",
+            )
         elif args.additional_information == "organ_inter":
             model = UNETR_2D_organ(
                 in_channels=args.in_channels,
@@ -184,6 +200,38 @@ def main():
                 res_block=True,
                 dropout_rate=args.dropout_rate,
                 info_mode="inter",
+            )
+        elif args.additional_information == "organ_inter2":
+            model = UNETR_2D_organ(
+                in_channels=args.in_channels,
+                out_channels=args.out_channels,
+                img_size=(args.roi_x, args.roi_y),
+                feature_size=args.feature_size,
+                hidden_size=args.hidden_size,
+                mlp_dim=args.mlp_dim,
+                num_heads=args.num_heads,
+                pos_embed=args.pos_embed,
+                norm_name=args.norm_name,
+                conv_block=True,
+                res_block=True,
+                dropout_rate=args.dropout_rate,
+                info_mode="inter2",
+            )
+        elif args.additional_information == "organ_inter3":
+            model = UNETR_2D_organ(
+                in_channels=args.in_channels,
+                out_channels=args.out_channels,
+                img_size=(args.roi_x, args.roi_y),
+                feature_size=args.feature_size,
+                hidden_size=args.hidden_size,
+                mlp_dim=args.mlp_dim,
+                num_heads=args.num_heads,
+                pos_embed=args.pos_embed,
+                norm_name=args.norm_name,
+                conv_block=True,
+                res_block=True,
+                dropout_rate=args.dropout_rate,
+                info_mode="inter3",
             )
         elif args.additional_information == "organ_late":
             model = UNETR_2D_organ(
