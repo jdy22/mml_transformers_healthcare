@@ -26,7 +26,7 @@ from monai.utils.misc import set_determinism
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument(
-    "--pretrained_dir", default="./runs_organ/run5/", type=str, help="pretrained checkpoint directory"
+    "--pretrained_dir", default="./runs_organ/run11/", type=str, help="pretrained checkpoint directory"
 )
 parser.add_argument("--data_dir", default="./amos22/", type=str, help="dataset directory")
 parser.add_argument("--json_list", default="dataset_internal_val.json", type=str, help="dataset json file")
@@ -73,7 +73,7 @@ parser.add_argument("--val_samples", default=20, type=int, help="number of sampl
 parser.add_argument("--train_sampling", default="uniform", type=str, help="sampling distribution of organs during training")
 parser.add_argument("--preprocessing", default=2, type=int, help="preprocessing option")
 parser.add_argument("--data_augmentation", action="store_false", help="use data augmentation during training")
-parser.add_argument("--additional_information", default="organ_classif", help="additional information provided to segmentation model")
+parser.add_argument("--additional_information", default="organ_classif_early", help="additional information provided to segmentation model")
 parser.add_argument("--classification_layer", default=6, type=int, help="Transformer layer for classification")
 
 
@@ -84,7 +84,7 @@ def calculate_accuracy(args, model, loader):
         val_inputs, val_labels = (batch["image"].cuda(), batch["label"].cuda())
         # img_name = batch["image_meta_dict"]["filename_or_obj"][0].split("/")[-1]
         # print("Inference on case {}".format(img_name))
-        if args.additional_information == "organ_classif":
+        if "organ_classif" in args.additional_information:
             _, class_logits = model(val_inputs, test_mode=False, class_layer=args.classification_layer)
         else:
             print("Script can only be used for joint organ classification and segmentation models.")
@@ -150,6 +150,22 @@ def main():
                 res_block=True,
                 dropout_rate=args.dropout_rate,
                 info_mode="classif",
+            )
+        elif args.additional_information == "organ_classif_early":
+            model = UNETR_2D_organ(
+                in_channels=args.in_channels,
+                out_channels=args.out_channels,
+                img_size=(args.roi_x, args.roi_y),
+                feature_size=args.feature_size,
+                hidden_size=args.hidden_size,
+                mlp_dim=args.mlp_dim,
+                num_heads=args.num_heads,
+                pos_embed=args.pos_embed,
+                norm_name=args.norm_name,
+                conv_block=True,
+                res_block=True,
+                dropout_rate=args.dropout_rate,
+                info_mode="classif_early",
             )
         else:
             print("Script can only be used for joint organ classification and segmentation models.")
