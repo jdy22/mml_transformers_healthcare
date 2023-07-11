@@ -332,6 +332,6 @@ if __name__ == "__main__":
         dropout_rate=0.0,
     )
 
-    x = torch.zeros((40, 1, 112, 112))
+    x = torch.zeros((40, 2, 112, 112))
     logits = model(x, modality="MRI")
     print(logits.shape)
