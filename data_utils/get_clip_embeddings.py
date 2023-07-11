@@ -3,6 +3,12 @@ import clip
 import pickle
 
 
+def create_dictionary(embeddings):
+    embeddings_dict = {}
+
+    return embeddings_dict
+
+
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model, preprocess = clip.load("ViT-L/14", device=device)
@@ -84,15 +90,16 @@ def main():
     mri_pos_tokens = clip.tokenize(mri_pos_prompts).to(device)
     mri_neg_tokens = clip.tokenize(mri_neg_prompts).to(device)
     with torch.no_grad():
-        ct_pos_embeddings = model.encode_text(ct_pos_tokens)
-        ct_neg_embeddings = model.encode_text(ct_neg_tokens)
-        mri_pos_embeddings = model.encode_text(mri_pos_tokens)
-        mri_neg_embeddings = model.encode_text(mri_neg_tokens)
+        ct_pos_embeddings = model.encode_text(ct_pos_tokens).cpu()
+        ct_neg_embeddings = model.encode_text(ct_neg_tokens).cpu()
+        mri_pos_embeddings = model.encode_text(mri_pos_tokens).cpu()
+        mri_neg_embeddings = model.encode_text(mri_neg_tokens).cpu()
 
     print(ct_pos_embeddings.shape)
     print(ct_neg_embeddings.shape)
     print(mri_pos_embeddings.shape)
     print(mri_neg_embeddings.shape)
+    print(type(ct_pos_embeddings))
 
 
 if __name__ == "__main__":
