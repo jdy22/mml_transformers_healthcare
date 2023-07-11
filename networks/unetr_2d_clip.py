@@ -25,6 +25,7 @@ from monai.networks.blocks.dynunet_block import UnetOutBlock
 from networks.unetr_2d_organ import add_organ_info
 
 
+torch.cuda.set_device(0)
 with open("clip_embeddings.pk1", "rb") as target:
     clip_embeddings = pickle.load(target)
 ct_pos_embeddings = clip_embeddings[0]
