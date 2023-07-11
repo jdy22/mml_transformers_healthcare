@@ -205,6 +205,22 @@ def main():
                 dropout_rate=args.dropout_rate,
                 info_mode="classif_early",
             )
+        elif args.additional_information == "organ_classif_inter3":
+            model = UNETR_2D_organ(
+                in_channels=args.in_channels,
+                out_channels=args.out_channels,
+                img_size=(args.roi_x, args.roi_y),
+                feature_size=args.feature_size,
+                hidden_size=args.hidden_size,
+                mlp_dim=args.mlp_dim,
+                num_heads=args.num_heads,
+                pos_embed=args.pos_embed,
+                norm_name=args.norm_name,
+                conv_block=True,
+                res_block=True,
+                dropout_rate=args.dropout_rate,
+                info_mode="classif_inter3",
+            )
         elif args.additional_information == "organ_inter":
             model = UNETR_2D_organ(
                 in_channels=args.in_channels,
