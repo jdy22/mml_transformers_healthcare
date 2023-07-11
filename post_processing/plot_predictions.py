@@ -74,6 +74,7 @@ parser.add_argument("--train_sampling", default="uniform", type=str, help="sampl
 parser.add_argument("--preprocessing", default=2, type=int, help="preprocessing option")
 parser.add_argument("--data_augmentation", action="store_false", help="use data augmentation during training")
 parser.add_argument("--additional_information", default="modality_concat", help="additional information provided to segmentation model")
+parser.add_argument("--classification_layer", default=3, type=int, help="Transformer layer for classification")
 
 
 def visualise_predictions(args, model, loader, modality, image_index, num_samples):
@@ -86,6 +87,8 @@ def visualise_predictions(args, model, loader, modality, image_index, num_sample
                 val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="concat2")
             elif args.additional_information == "modality_add":
                 val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="add")
+            elif args.additional_information == "modality_decoder":
+                val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality)
             elif args.additional_information == "organ" or args.additional_information == "organ_inter" or args.additional_information == "organ_inter2" or args.additional_information == "organ_inter3" or args.additional_information == "organ_late":
                 val_inputs_full = torch.cat((val_inputs, val_labels), dim=1)
                 val_outputs = sliding_window_inference(val_inputs_full, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap)
@@ -136,6 +139,23 @@ def main():
                 conv_block=True,
                 res_block=True,
                 dropout_rate=args.dropout_rate,
+                separate_decoders=False,
+            )
+        elif args.additional_information == "modality_decoder":
+            model = UNETR_2D_modality(
+                in_channels=args.in_channels,
+                out_channels=args.out_channels,
+                img_size=(args.roi_x, args.roi_y),
+                feature_size=args.feature_size,
+                hidden_size=args.hidden_size,
+                mlp_dim=args.mlp_dim,
+                num_heads=args.num_heads,
+                pos_embed=args.pos_embed,
+                norm_name=args.norm_name,
+                conv_block=True,
+                res_block=True,
+                dropout_rate=args.dropout_rate,
+                separate_decoders=True,
             )
         elif args.additional_information == "organ":
             model = UNETR_2D_organ(
