@@ -5,6 +5,8 @@ import pickle
 
 def create_dictionary(embeddings):
     embeddings_dict = {}
+    for organ in range(len(embeddings)):
+        embeddings_dict[str(organ+1)] = embeddings[None, None, organ]
 
     return embeddings_dict
 
@@ -99,8 +101,15 @@ def main():
     print(ct_neg_embeddings.shape)
     print(mri_pos_embeddings.shape)
     print(mri_neg_embeddings.shape)
-    print(type(ct_pos_embeddings))
-    print(ct_pos_embeddings[None, None, 3].shape)
+
+    ct_pos_embeddings = create_dictionary(ct_pos_embeddings)
+    ct_neg_embeddings = create_dictionary(ct_neg_embeddings)
+    mri_pos_embeddings = create_dictionary(mri_pos_embeddings)
+    mri_neg_embeddings = create_dictionary(mri_neg_embeddings)
+
+    clip_embeddings = [ct_pos_embeddings, ct_neg_embeddings, mri_pos_embeddings, mri_neg_embeddings]
+    with open("clip_embeddings.pk1", "wb") as target:
+        pickle.dump(clip_embeddings, target)
 
 
 if __name__ == "__main__":
