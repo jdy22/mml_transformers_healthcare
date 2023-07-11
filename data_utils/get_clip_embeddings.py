@@ -100,6 +100,7 @@ def main():
     print(mri_pos_embeddings.shape)
     print(mri_neg_embeddings.shape)
     print(type(ct_pos_embeddings))
+    print(ct_pos_embeddings[None, None, 3].shape)
 
 
 if __name__ == "__main__":
