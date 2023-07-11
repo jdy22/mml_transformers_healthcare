@@ -20,6 +20,7 @@ from monai.networks.blocks.patchembedding import PatchEmbeddingBlock
 from monai.networks.blocks.transformerblock import TransformerBlock
 from monai.networks.blocks import UnetrBasicBlock, UnetrPrUpBlock, UnetrUpBlock
 from monai.networks.blocks.dynunet_block import UnetOutBlock
+from monai.networks.nets import ViT
 
 
 class ViT_modality(nn.Module):
@@ -160,6 +161,7 @@ class UNETR_2D_modality(nn.Module):
         conv_block: bool = False,
         res_block: bool = True,
         dropout_rate: float = 0.0,
+        separate_decoders: bool = False,
     ) -> None:
         """
         Args:
@@ -204,18 +206,36 @@ class UNETR_2D_modality(nn.Module):
             img_size[1] // self.patch_size[1],
         )
         self.hidden_size = hidden_size
-        self.vit = ViT_modality(
-            in_channels=in_channels,
-            img_size=img_size,
-            patch_size=self.patch_size,
-            hidden_size=hidden_size,
-            mlp_dim=mlp_dim,
-            num_layers=self.num_layers,
-            num_heads=num_heads,
-            pos_embed=pos_embed,
-            dropout_rate=dropout_rate,
-            spatial_dims=2,
-        )
+        self.separate_decoders = separate_decoders
+
+        if self.separate_decoders:
+            self.vit = ViT(
+                in_channels=in_channels,
+                img_size=img_size,
+                patch_size=self.patch_size,
+                hidden_size=hidden_size,
+                mlp_dim=mlp_dim,
+                num_layers=self.num_layers,
+                num_heads=num_heads,
+                pos_embed=pos_embed,
+                classification=False,
+                dropout_rate=dropout_rate,
+                spatial_dims=2,
+            )
+        else:
+            self.vit = ViT_modality(
+                in_channels=in_channels,
+                img_size=img_size,
+                patch_size=self.patch_size,
+                hidden_size=hidden_size,
+                mlp_dim=mlp_dim,
+                num_layers=self.num_layers,
+                num_heads=num_heads,
+                pos_embed=pos_embed,
+                dropout_rate=dropout_rate,
+                spatial_dims=2,
+            )
+
         self.encoder1 = UnetrBasicBlock(
             spatial_dims=2,
             in_channels=in_channels,
@@ -297,15 +317,100 @@ class UNETR_2D_modality(nn.Module):
             norm_name=norm_name,
             res_block=res_block,
         )
-        self.out = UnetOutBlock(spatial_dims=2, in_channels=feature_size, out_channels=out_channels)  # type: ignore
+        self.out = UnetOutBlock(spatial_dims=2, in_channels=feature_size, out_channels=out_channels)
+
+        if self.separate_decoders:
+            self.encoder1b = UnetrBasicBlock(
+                spatial_dims=2,
+                in_channels=in_channels,
+                out_channels=feature_size,
+                kernel_size=3,
+                stride=1,
+                norm_name=norm_name,
+                res_block=res_block,
+            )
+            self.encoder2b = UnetrPrUpBlock(
+                spatial_dims=2,
+                in_channels=hidden_size,
+                out_channels=feature_size * 2,
+                num_layer=2,
+                kernel_size=3,
+                stride=1,
+                upsample_kernel_size=2,
+                norm_name=norm_name,
+                conv_block=conv_block,
+                res_block=res_block,
+            )
+            self.encoder3b = UnetrPrUpBlock(
+                spatial_dims=2,
+                in_channels=hidden_size,
+                out_channels=feature_size * 4,
+                num_layer=1,
+                kernel_size=3,
+                stride=1,
+                upsample_kernel_size=2,
+                norm_name=norm_name,
+                conv_block=conv_block,
+                res_block=res_block,
+            )
+            self.encoder4b = UnetrPrUpBlock(
+                spatial_dims=2,
+                in_channels=hidden_size,
+                out_channels=feature_size * 8,
+                num_layer=0,
+                kernel_size=3,
+                stride=1,
+                upsample_kernel_size=2,
+                norm_name=norm_name,
+                conv_block=conv_block,
+                res_block=res_block,
+            )
+            self.decoder5b = UnetrUpBlock(
+                spatial_dims=2,
+                in_channels=hidden_size,
+                out_channels=feature_size * 8,
+                kernel_size=3,
+                upsample_kernel_size=2,
+                norm_name=norm_name,
+                res_block=res_block,
+            )
+            self.decoder4b = UnetrUpBlock(
+                spatial_dims=2,
+                in_channels=feature_size * 8,
+                out_channels=feature_size * 4,
+                kernel_size=3,
+                upsample_kernel_size=2,
+                norm_name=norm_name,
+                res_block=res_block,
+            )
+            self.decoder3b = UnetrUpBlock(
+                spatial_dims=2,
+                in_channels=feature_size * 4,
+                out_channels=feature_size * 2,
+                kernel_size=3,
+                upsample_kernel_size=2,
+                norm_name=norm_name,
+                res_block=res_block,
+            )
+            self.decoder2b = UnetrUpBlock(
+                spatial_dims=2,
+                in_channels=feature_size * 2,
+                out_channels=feature_size,
+                kernel_size=3,
+                upsample_kernel_size=2,
+                norm_name=norm_name,
+                res_block=res_block,
+            )
+            self.outb = UnetOutBlock(spatial_dims=2, in_channels=feature_size, out_channels=out_channels)
+
 
     def proj_feat(self, x, hidden_size, feat_size):
         x = x.view(x.size(0), feat_size[0], feat_size[1], hidden_size)
         x = x.permute(0, 3, 1, 2).contiguous()
         return x
+    
 
-    def forward(self, x_in, modality, info_mode):
-        x, hidden_states_out, modality_out = self.vit(x_in, modality, info_mode)
+    def decoder_main(self, x_in, hidden_states_out, x):
         enc1 = self.encoder1(x_in)
         x2 = hidden_states_out[2]
         enc2 = self.encoder2(self.proj_feat(x2, self.hidden_size, self.feat_size))
@@ -319,6 +424,36 @@ class UNETR_2D_modality(nn.Module):
         dec1 = self.decoder3(dec2, enc2)
         out = self.decoder2(dec1, enc1)
         logits = self.out(out)
+        return logits
+    
+
+    def decoder_second(self, x_in, hidden_states_out, x):
+        enc1 = self.encoder1b(x_in)
+        x2 = hidden_states_out[2]
+        enc2 = self.encoder2b(self.proj_feat(x2, self.hidden_size, self.feat_size))
+        x3 = hidden_states_out[5]
+        enc3 = self.encoder3b(self.proj_feat(x3, self.hidden_size, self.feat_size))
+        x4 = hidden_states_out[8]
+        enc4 = self.encoder4b(self.proj_feat(x4, self.hidden_size, self.feat_size))
+        dec4 = self.proj_feat(x, self.hidden_size, self.feat_size)
+        dec3 = self.decoder5b(dec4, enc4)
+        dec2 = self.decoder4b(dec3, enc3)
+        dec1 = self.decoder3b(dec2, enc2)
+        out = self.decoder2b(dec1, enc1)
+        logits = self.outb(out)
+        return logits
+    
+
+    def forward(self, x_in, modality, info_mode=None):
+        if self.separate_decoders:
+            x, hidden_states_out = self.vit(x_in)
+            if modality == "CT":
+                logits = self.decoder_main(x_in, hidden_states_out, x)
+            elif modality == "MRI":
+                logits = self.decoder_second(x_in, hidden_states_out, x)
+        else:
+            x, hidden_states_out, modality_out = self.vit(x_in, modality, info_mode)
+            logits = self.decoder_main(x_in, hidden_states_out, x)       
         return logits
     
 
@@ -336,11 +471,9 @@ if __name__ == "__main__":
         conv_block=True,
         res_block=True,
         dropout_rate=0.0,
+        separate_decoders=True,
     )
 
     x = torch.zeros((40, 1, 112, 112))
-    logits = model(x, modality="CT", info_mode="concat2")
+    logits = model(x, modality="MRI")
     print(logits.shape)
-
-    CT_token = model.vit.CT_token
-    print(CT_token.shape)
