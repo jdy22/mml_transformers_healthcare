@@ -36,7 +36,7 @@ from monai.utils.enums import MetricReduction
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument("--checkpoint", default=None, help="start training from saved checkpoint")
-parser.add_argument("--logdir", default="run1-2", type=str, help="directory to save the tensorboard logs")
+parser.add_argument("--logdir", default="run4", type=str, help="directory to save the tensorboard logs")
 parser.add_argument(
     "--pretrained_dir", default=None, type=str, help="pretrained checkpoint directory"
 )
@@ -102,7 +102,7 @@ parser.add_argument("--val_samples", default=20, type=int, help="number of sampl
 parser.add_argument("--train_sampling", default="uniform", type=str, help="sampling distribution of organs during training")
 parser.add_argument("--preprocessing", default=2, type=int, help="preprocessing option")
 parser.add_argument("--data_augmentation", action="store_false", help="use data augmentation during training")
-parser.add_argument("--additional_information", default="organ", help="additional information provided to segmentation model")
+parser.add_argument("--additional_information", default="modality_decoder", help="additional information provided to segmentation model")
 parser.add_argument("--loss_combination_factor", default=1.0, type=float, help="combination factor for segmentation and classification losses")
 parser.add_argument("--classification_layer", default=6, type=int, help="Transformer layer for classification")
 
@@ -165,6 +165,23 @@ def main_worker(gpu, args):
                 conv_block=True,
                 res_block=True,
                 dropout_rate=args.dropout_rate,
+                separate_decoders=False,
+            )
+        elif args.additional_information == "modality_decoder":
+            model = UNETR_2D_modality(
+                in_channels=args.in_channels,
+                out_channels=args.out_channels,
+                img_size=(args.roi_x, args.roi_y),
+                feature_size=args.feature_size,
+                hidden_size=args.hidden_size,
+                mlp_dim=args.mlp_dim,
+                num_heads=args.num_heads,
+                pos_embed=args.pos_embed,
+                norm_name=args.norm_name,
+                conv_block=True,
+                res_block=True,
+                dropout_rate=args.dropout_rate,
+                separate_decoders=True,
             )
         elif args.additional_information == "organ":
             model = UNETR_2D_organ(
