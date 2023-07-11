@@ -25,7 +25,6 @@ from monai.networks.blocks.dynunet_block import UnetOutBlock
 from networks.unetr_2d_organ import add_organ_info
 
 
-torch.cuda.set_device(0)
 with open("clip_embeddings.pk1", "rb") as target:
     clip_embeddings = pickle.load(target)
 ct_pos_embeddings = clip_embeddings[0]
@@ -99,15 +98,11 @@ class ViT_clip(nn.Module):
         )
         self.norm = nn.LayerNorm(hidden_size)
 
-        # self.organ_tokens_CT = ct_pos_embeddings.cuda()
-        # self.no_organ_tokens_CT = ct_neg_embeddings.cuda()
-        # self.organ_tokens_MRI = mri_pos_embeddings.cuda()
-        # self.no_organ_tokens_MRI = mri_neg_embeddings.cuda()
+        self.organ_tokens_CT = {k: v.to(device=self.norm.device) for k, v in ct_pos_embeddings.items()}
+        self.no_organ_tokens_CT = {k: v.to(device=self.norm.device) for k, v in ct_neg_embeddings.items()}
+        self.organ_tokens_MRI = {k: v.to(device=self.norm.device) for k, v in mri_pos_embeddings.items()}
+        self.no_organ_tokens_MRI = {k: v.to(device=self.norm.device) for k, v in mri_neg_embeddings.items()}
 
-        self.organ_tokens_CT = ct_pos_embeddings
-        self.no_organ_tokens_CT = ct_neg_embeddings
-        self.organ_tokens_MRI = mri_pos_embeddings
-        self.no_organ_tokens_MRI = mri_neg_embeddings
 
     def forward(self, x_in, modality):
         # Options for modality: "CT" or "MRI"
