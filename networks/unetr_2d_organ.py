@@ -296,7 +296,7 @@ class UNETR_2D_organ(nn.Module):
             conv_block: bool argument to determine if convolutional block is used.
             res_block: bool argument to determine if residual block is used.
             dropout_rate: faction of the input units to drop.
-            info_mode: early, inter, inter2, inter3, late, classif, classif_early.
+            info_mode: early, inter, inter2, inter3, late, classif, classif_early, classif_inter3.
 
         Examples::
 
@@ -328,7 +328,7 @@ class UNETR_2D_organ(nn.Module):
         )
         self.hidden_size = hidden_size
         self.info_mode = info_mode
-        if self.info_mode == "classif":
+        if self.info_mode == "classif" or self.info_mode == "classif_inter3":
             self.classification = True
             self.classification_concat = False
         elif self.info_mode == "classif_early":
@@ -338,7 +338,7 @@ class UNETR_2D_organ(nn.Module):
             self.classification = False
             self.classification_concat = False
 
-        if self.info_mode == "early" or self.info_mode == "classif" or self.info_mode == "classif_early":
+        if self.info_mode == "early" or self.info_mode == "classif" or self.info_mode == "classif_early" or self.info_mode == "classif_inter3":
             self.vit = ViT_organ(
                 in_channels=in_channels,
                 img_size=img_size,
@@ -378,11 +378,11 @@ class UNETR_2D_organ(nn.Module):
             res_block=res_block,
         )
 
-        if self.info_mode == "inter" or self.info_mode == "inter2" or self.info_mode == "inter3":
+        if self.info_mode == "inter" or self.info_mode == "inter2" or self.info_mode == "inter3" or self.info_mode == "classif_inter3":
             decoder_input_size_bottleneck = hidden_size + 15
             if self.info_mode == "inter" or self.info_mode == "inter2":
                 decoder_input_size_skip = hidden_size + 15
-            elif self.info_mode == "inter3":
+            elif self.info_mode == "inter3" or self.info_mode == "classif_inter3":
                 decoder_input_size_skip = hidden_size
             self.organ_tokens = nn.ParameterDict({
                 "1" : nn.Parameter(torch.zeros(1, 1, self.feat_size[0], self.feat_size[1])),
@@ -634,7 +634,7 @@ class UNETR_2D_organ(nn.Module):
                 "14" : nn.Parameter(torch.zeros(1, 1, self.img_size[0], self.img_size[1])),
                 "15" : nn.Parameter(torch.zeros(1, 1, self.img_size[0], self.img_size[1]))
             })
-        elif self.info_mode == "early" or self.info_mode == "inter" or self.info_mode == "inter2" or self.info_mode == "inter3" or self.info_mode == "classif" or self.info_mode == "classif_early":
+        elif self.info_mode == "early" or self.info_mode == "inter" or self.info_mode == "inter2" or self.info_mode == "inter3" or self.info_mode == "classif" or self.info_mode == "classif_early" or self.info_mode == "classif_inter3":
             output_input_size = feature_size
         self.out = UnetOutBlock(spatial_dims=2, in_channels=output_input_size, out_channels=out_channels)
 
@@ -644,7 +644,7 @@ class UNETR_2D_organ(nn.Module):
         return x
 
     def forward(self, x_in, without_labels=False, test_mode=False, class_layer=12):
-        if self.info_mode == "early" or self.info_mode == "classif" or self.info_mode == "classif_early":
+        if self.info_mode == "early" or self.info_mode == "classif" or self.info_mode == "classif_early" or self.info_mode == "classif_inter3":
             x, hidden_states_out, class_logits = self.vit(x_in, without_labels, class_layer)
         elif self.info_mode == "inter" or self.info_mode == "inter2" or self.info_mode == "inter3" or self.info_mode == "late":
             x = x_in[:, None, 0, :, :]
@@ -683,6 +683,8 @@ class UNETR_2D_organ(nn.Module):
         dec4 = self.proj_feat(x, self.hidden_size, self.feat_size)
         if self.info_mode == "inter" or self.info_mode == "inter2" or self.info_mode == "inter3":
             dec4 = add_organ_info(dec4, labels, self.organ_tokens, self.no_organ_tokens)
+        elif self.info_mode == "classif_inter3":
+            dec4 = add_organ_info2(dec4, class_logits, self.organ_tokens, self.no_organ_tokens)
         dec3 = self.decoder5(dec4, enc4)
 
         dec2 = self.decoder4(dec3, enc3)
@@ -716,7 +718,7 @@ if __name__ == "__main__":
         conv_block=True,
         res_block=True,
         dropout_rate=0.0,
-        info_mode="classif_early",
+        info_mode="classif_inter3",
     )
 
     # x = torch.zeros((40, 2, 112, 112))
@@ -728,6 +730,6 @@ if __name__ == "__main__":
     # print(logits.shape)
 
     x = torch.zeros((40, 1, 112, 112))
-    seg_logits, class_logits = model(x, test_mode=False, class_layer=6)
+    seg_logits, class_logits = model(x, test_mode=False, class_layer=12)
     print(seg_logits.shape)
     print(class_logits.shape)
