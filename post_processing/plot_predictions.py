@@ -17,6 +17,7 @@ import torch
 from networks.unetr_2d import UNETR_2D
 from networks.unetr_2d_modality import UNETR_2D_modality
 from networks.unetr_2d_organ import UNETR_2D_organ
+from networks.unetr_2d_clip import UNETR_2D_clip
 from data_utils.data_loader import get_loader
 from data_utils.data_loader_2 import get_loader_2
 from data_utils.data_loader_3 import get_loader_3
@@ -94,6 +95,9 @@ def visualise_predictions(args, model, loader, modality, image_index, num_sample
                 val_outputs = sliding_window_inference(val_inputs_full, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap)
             elif "organ_classif" in args.additional_information:
                 val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, test_mode=True, class_layer=args.classification_layer)
+            elif args.additional_information == "clip_early":
+                val_inputs_full = torch.cat((val_inputs, val_labels), dim=1)
+                val_outputs = sliding_window_inference(val_inputs_full, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality)
             else:
                 val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap)
             val_outputs = torch.softmax(val_outputs, 1).cpu().numpy()
@@ -284,6 +288,21 @@ def main():
                 res_block=True,
                 dropout_rate=args.dropout_rate,
                 info_mode="late",
+            )
+        elif args.additional_information == "clip_early":
+            model = UNETR_2D_clip(
+                in_channels=args.in_channels,
+                out_channels=args.out_channels,
+                img_size=(args.roi_x, args.roi_y),
+                feature_size=args.feature_size,
+                hidden_size=args.hidden_size,
+                mlp_dim=args.mlp_dim,
+                num_heads=args.num_heads,
+                pos_embed=args.pos_embed,
+                norm_name=args.norm_name,
+                conv_block=True,
+                res_block=True,
+                dropout_rate=args.dropout_rate,
             )
         else:
             model = UNETR_2D(
