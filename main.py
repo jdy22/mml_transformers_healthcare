@@ -328,6 +328,7 @@ def main_worker(gpu, args):
                 conv_block=True,
                 res_block=True,
                 dropout_rate=args.dropout_rate,
+                info_mode="early",
             )
         else:
             model = UNETR_2D(
