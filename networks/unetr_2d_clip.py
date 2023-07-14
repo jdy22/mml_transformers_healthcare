@@ -21,6 +21,7 @@ from monai.networks.blocks.patchembedding import PatchEmbeddingBlock
 from monai.networks.blocks.transformerblock import TransformerBlock
 from monai.networks.blocks import UnetrBasicBlock, UnetrPrUpBlock, UnetrUpBlock
 from monai.networks.blocks.dynunet_block import UnetOutBlock
+from monai.networks.nets import ViT
 
 from networks.unetr_2d_organ import add_organ_info
 
@@ -148,6 +149,7 @@ class UNETR_2D_clip(nn.Module):
         conv_block: bool = False,
         res_block: bool = True,
         dropout_rate: float = 0.0,
+        info_mode: str = "late",
     ) -> None:
         """
         Args:
@@ -163,6 +165,7 @@ class UNETR_2D_clip(nn.Module):
             conv_block: bool argument to determine if convolutional block is used.
             res_block: bool argument to determine if residual block is used.
             dropout_rate: faction of the input units to drop.
+            info_mode: early, late.
 
         Examples::
 
@@ -192,18 +195,36 @@ class UNETR_2D_clip(nn.Module):
             img_size[1] // self.patch_size[1],
         )
         self.hidden_size = hidden_size
-        self.vit = ViT_clip(
-            in_channels=in_channels,
-            img_size=img_size,
-            patch_size=self.patch_size,
-            hidden_size=hidden_size,
-            mlp_dim=mlp_dim,
-            num_layers=self.num_layers,
-            num_heads=num_heads,
-            pos_embed=pos_embed,
-            dropout_rate=dropout_rate,
-            spatial_dims=2,
-        )
+        self.info_mode = info_mode
+
+        if self.info_mode == "early":
+            self.vit = ViT_clip(
+                in_channels=in_channels,
+                img_size=img_size,
+                patch_size=self.patch_size,
+                hidden_size=hidden_size,
+                mlp_dim=mlp_dim,
+                num_layers=self.num_layers,
+                num_heads=num_heads,
+                pos_embed=pos_embed,
+                dropout_rate=dropout_rate,
+                spatial_dims=2,
+            )
+        elif self.info_mode == "late":
+            self.vit = ViT(
+                in_channels=in_channels,
+                img_size=img_size,
+                patch_size=self.patch_size,
+                hidden_size=hidden_size,
+                mlp_dim=mlp_dim,
+                num_layers=self.num_layers,
+                num_heads=num_heads,
+                pos_embed=pos_embed,
+                classification=False,
+                dropout_rate=dropout_rate,
+                spatial_dims=2,
+            )
+
         self.encoder1 = UnetrBasicBlock(
             spatial_dims=2,
             in_channels=in_channels,
@@ -285,7 +306,11 @@ class UNETR_2D_clip(nn.Module):
             norm_name=norm_name,
             res_block=res_block,
         )
-        self.out = UnetOutBlock(spatial_dims=2, in_channels=feature_size, out_channels=out_channels)
+
+        if self.info_mode == "early":
+            self.out = UnetOutBlock(spatial_dims=2, in_channels=feature_size, out_channels=out_channels)
+        elif self.info_mode == "late":
+            pass
 
 
     def proj_feat(self, x, hidden_size, feat_size):
@@ -295,7 +320,13 @@ class UNETR_2D_clip(nn.Module):
     
 
     def forward(self, x_in, modality):
-        x, hidden_states_out = self.vit(x_in, modality)
+        if self.info_mode == "early":
+            x, hidden_states_out = self.vit(x_in, modality)
+        elif self.info_mode == "late":
+            x = x_in[:, None, 0, :, :]
+            labels = x_in[:, 1, :, :]
+            x, hidden_states_out = self.vit(x)
+
         enc1 = self.encoder1(x_in[:, None, 0, :, :])
         x2 = hidden_states_out[2]
         enc2 = self.encoder2(self.proj_feat(x2, self.hidden_size, self.feat_size))
@@ -308,7 +339,12 @@ class UNETR_2D_clip(nn.Module):
         dec2 = self.decoder4(dec3, enc3)
         dec1 = self.decoder3(dec2, enc2)
         out = self.decoder2(dec1, enc1)
-        logits = self.out(out)
+
+        if self.info_mode == "early":
+            logits = self.out(out)
+        elif self.info_mode == "late":
+            logits = None
+
         return logits
     
 
@@ -326,6 +362,7 @@ if __name__ == "__main__":
         conv_block=True,
         res_block=True,
         dropout_rate=0.0,
+        info_mode="early",
     )
 
     x = torch.zeros((40, 2, 112, 112))
