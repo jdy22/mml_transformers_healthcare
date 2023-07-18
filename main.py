@@ -36,10 +36,10 @@ from monai.transforms import Activations, AsDiscrete, Compose
 from monai.utils.enums import MetricReduction
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
-parser.add_argument("--checkpoint", default="./runs_organ/run12/model.pt", help="start training from saved checkpoint")
-parser.add_argument("--logdir", default="run12b", type=str, help="directory to save the tensorboard logs")
+parser.add_argument("--checkpoint", default="./runs/rerun18/model.pt", help="start training from saved checkpoint")
+parser.add_argument("--logdir", default="run5", type=str, help="directory to save the tensorboard logs")
 parser.add_argument(
-    "--pretrained_dir", default="./runs_organ/run12/", type=str, help="pretrained checkpoint directory"
+    "--pretrained_dir", default=None, type=str, help="pretrained checkpoint directory"
 )
 parser.add_argument("--data_dir", default="./amos22/", type=str, help="dataset directory")
 parser.add_argument("--json_list", default="dataset_internal_val.json", type=str, help="dataset json file")
@@ -92,7 +92,7 @@ parser.add_argument("--dropout_rate", default=0.0, type=float, help="dropout rat
 parser.add_argument("--infer_overlap", default=0.5, type=float, help="sliding window inference overlap")
 parser.add_argument("--lrschedule", default="warmup_cosine", type=str, help="type of learning rate scheduler")
 parser.add_argument("--warmup_epochs", default=50, type=int, help="number of warmup epochs")
-parser.add_argument("--resume_ckpt", action="store_false", help="resume training from pretrained checkpoint")
+parser.add_argument("--resume_ckpt", action="store_true", help="resume training from pretrained checkpoint")
 parser.add_argument("--resume_jit", action="store_true", help="resume training from pretrained torchscript checkpoint")
 parser.add_argument("--smooth_dr", default=1e-6, type=float, help="constant added to dice denominator to avoid nan")
 parser.add_argument("--smooth_nr", default=0.0, type=float, help="constant added to dice numerator to avoid zero")
@@ -103,7 +103,7 @@ parser.add_argument("--val_samples", default=20, type=int, help="number of sampl
 parser.add_argument("--train_sampling", default="uniform", type=str, help="sampling distribution of organs during training")
 parser.add_argument("--preprocessing", default=2, type=int, help="preprocessing option")
 parser.add_argument("--data_augmentation", action="store_false", help="use data augmentation during training")
-parser.add_argument("--additional_information", default="organ_classif_inter3", help="additional information provided to segmentation model")
+parser.add_argument("--additional_information", default="modality_decoder_pretrained", help="additional information provided to segmentation model")
 parser.add_argument("--loss_combination_factor", default=1.0, type=float, help="combination factor for segmentation and classification losses")
 parser.add_argument("--classification_layer", default=12, type=int, help="Transformer layer for classification")
 
@@ -170,7 +170,7 @@ def main_worker(gpu, args):
                 dropout_rate=args.dropout_rate,
                 separate_decoders=False,
             )
-        elif args.additional_information == "modality_decoder":
+        elif "modality_decoder" in args.additional_information:
             model = UNETR_2D_modality(
                 in_channels=args.in_channels,
                 out_channels=args.out_channels,
@@ -390,6 +390,16 @@ def main_worker(gpu, args):
         for k, v in checkpoint["state_dict"].items():
             new_state_dict[k.replace("backbone.", "")] = v
         model.load_state_dict(new_state_dict, strict=False)
+        if args.additional_information == "modality_decoder_pretrained":
+            model.encoder1b.load_state_dict(checkpoint.encoder1.state_dict())
+            model.encoder2b.load_state_dict(checkpoint.encoder2.state_dict())
+            model.encoder3b.load_state_dict(checkpoint.encoder3.state_dict())
+            model.encoder4b.load_state_dict(checkpoint.encoder4.state_dict())
+            model.decoder5b.load_state_dict(checkpoint.decoder5.state_dict())
+            model.decoder4b.load_state_dict(checkpoint.decoder4.state_dict())
+            model.decoder3b.load_state_dict(checkpoint.decoder3.state_dict())
+            model.decoder2b.load_state_dict(checkpoint.decoder2.state_dict())
+            model.outb.load_state_dict(checkpoint.out.state_dict())
         if "epoch" in checkpoint:
             start_epoch = checkpoint["epoch"] + 1
         if "best_acc" in checkpoint:

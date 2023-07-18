@@ -113,7 +113,7 @@ def calculate_dice_hausdorff(args, model, loader, modality):
             val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="concat2")
         elif args.additional_information == "modality_add":
             val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="add")
-        elif args.additional_information == "modality_decoder":
+        elif "modality_decoder" in args.additional_information:
             val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality)
         elif args.additional_information == "organ" and args.test_without_labels:
             val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, without_labels=True)
@@ -184,7 +184,7 @@ def calculate_dice_nsd(args, model, loader, modality):
             val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="concat2")
         elif args.additional_information == "modality_add":
             val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality, info_mode="add")
-        elif args.additional_information == "modality_decoder":
+        elif "modality_decoder" in args.additional_information:
             val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality)
         elif args.additional_information == "organ" and args.test_without_labels:
             val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, without_labels=True)
@@ -267,7 +267,7 @@ def main():
                 dropout_rate=args.dropout_rate,
                 separate_decoders=False,
             )
-        elif args.additional_information == "modality_decoder":
+        elif "modality_decoder" in args.additional_information:
             model = UNETR_2D_modality(
                 in_channels=args.in_channels,
                 out_channels=args.out_channels,

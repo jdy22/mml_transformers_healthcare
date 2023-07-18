@@ -81,7 +81,7 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args):
                 logits = model(data, modality, info_mode="concat2")
             elif args.additional_information == "modality_add":
                 logits = model(data, modality, info_mode="add")
-            elif args.additional_information == "modality_decoder":
+            elif "modality_decoder" in args.additional_information:
                 logits = model(data, modality)
             elif args.additional_information == "organ" or args.additional_information == "organ_inter" or args.additional_information == "organ_inter2" or args.additional_information == "organ_inter3" or args.additional_information == "organ_late":
                 data_in = torch.cat((data, target), dim=1)
@@ -170,7 +170,7 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
                         logits = model_inferer(data, modality=modality, info_mode="concat2")
                     elif args.additional_information == "modality_add":
                         logits = model_inferer(data, modality=modality, info_mode="add")
-                    elif args.additional_information == "modality_decoder":
+                    elif "modality_decoder" in args.additional_information:
                         logits = model_inferer(data, modality=modality)
                     elif args.additional_information == "organ" or args.additional_information == "organ_inter" or args.additional_information == "organ_inter2" or args.additional_information == "organ_inter3" or args.additional_information == "organ_late":
                         data_in = torch.cat((data, target), dim=1)
