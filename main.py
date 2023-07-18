@@ -391,15 +391,15 @@ def main_worker(gpu, args):
             new_state_dict[k.replace("backbone.", "")] = v
         model.load_state_dict(new_state_dict, strict=False)
         if args.additional_information == "modality_decoder_pretrained":
-            model.encoder1b.load_state_dict(checkpoint.encoder1.state_dict())
-            model.encoder2b.load_state_dict(checkpoint.encoder2.state_dict())
-            model.encoder3b.load_state_dict(checkpoint.encoder3.state_dict())
-            model.encoder4b.load_state_dict(checkpoint.encoder4.state_dict())
-            model.decoder5b.load_state_dict(checkpoint.decoder5.state_dict())
-            model.decoder4b.load_state_dict(checkpoint.decoder4.state_dict())
-            model.decoder3b.load_state_dict(checkpoint.decoder3.state_dict())
-            model.decoder2b.load_state_dict(checkpoint.decoder2.state_dict())
-            model.outb.load_state_dict(checkpoint.out.state_dict())
+            model.encoder1b.load_state_dict(model.encoder1.state_dict())
+            model.encoder2b.load_state_dict(model.encoder2.state_dict())
+            model.encoder3b.load_state_dict(model.encoder3.state_dict())
+            model.encoder4b.load_state_dict(model.encoder4.state_dict())
+            model.decoder5b.load_state_dict(model.decoder5.state_dict())
+            model.decoder4b.load_state_dict(model.decoder4.state_dict())
+            model.decoder3b.load_state_dict(model.decoder3.state_dict())
+            model.decoder2b.load_state_dict(model.decoder2.state_dict())
+            model.outb.load_state_dict(model.out.state_dict())
         if "epoch" in checkpoint:
             start_epoch = checkpoint["epoch"] + 1
         if "best_acc" in checkpoint:
