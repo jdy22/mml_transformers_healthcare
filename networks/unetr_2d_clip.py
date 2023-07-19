@@ -131,10 +131,16 @@ class ViT_clip(nn.Module):
         )
         self.norm = nn.LayerNorm(hidden_size)
 
-        self.organ_tokens_CT = {k: v.to(device="cuda:0") for k, v in ct_pos_embeddings.items()}
-        self.no_organ_tokens_CT = {k: v.to(device="cuda:0") for k, v in ct_neg_embeddings.items()}
-        self.organ_tokens_MRI = {k: v.to(device="cuda:0") for k, v in mri_pos_embeddings.items()}
-        self.no_organ_tokens_MRI = {k: v.to(device="cuda:0") for k, v in mri_neg_embeddings.items()}
+        # self.organ_tokens_CT = {k: v.to(device="cuda:0") for k, v in ct_pos_embeddings.items()}
+        # self.no_organ_tokens_CT = {k: v.to(device="cuda:0") for k, v in ct_neg_embeddings.items()}
+        # self.organ_tokens_MRI = {k: v.to(device="cuda:0") for k, v in mri_pos_embeddings.items()}
+        # self.no_organ_tokens_MRI = {k: v.to(device="cuda:0") for k, v in mri_neg_embeddings.items()}
+
+        # For testing only
+        self.organ_tokens_CT = ct_pos_embeddings
+        self.no_organ_tokens_CT = ct_neg_embeddings
+        self.organ_tokens_MRI = mri_pos_embeddings
+        self.no_organ_tokens_MRI = mri_neg_embeddings
 
 
     def forward(self, x_in, modality):
