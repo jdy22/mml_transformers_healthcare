@@ -52,6 +52,11 @@ def get_organ_info(labels, organ_tokens):
             organ_embedding = torch.unsqueeze(organ_embedding, dim=0)
             organ_embedding = torch.unsqueeze(organ_embedding, dim=-1)
             embeddings.append(organ_embedding)
+    if len(embeddings) == 0:
+        organ_embedding = torch.squeeze(organ_tokens["0"])
+        organ_embedding = torch.unsqueeze(organ_embedding, dim=0)
+        organ_embedding = torch.unsqueeze(organ_embedding, dim=-1)
+        embeddings.append(organ_embedding)
     organ_info.append(avg_pool(torch.cat(embeddings, dim=-1)))
     for i in range(1, batch_size):
         organs_present = torch.unique(labels[i])
@@ -62,6 +67,11 @@ def get_organ_info(labels, organ_tokens):
                 organ_embedding = torch.unsqueeze(organ_embedding, dim=0)
                 organ_embedding = torch.unsqueeze(organ_embedding, dim=-1)
                 embeddings.append(organ_embedding)
+        if len(embeddings) == 0:
+            organ_embedding = torch.squeeze(organ_tokens["0"])
+            organ_embedding = torch.unsqueeze(organ_embedding, dim=0)
+            organ_embedding = torch.unsqueeze(organ_embedding, dim=-1)
+            embeddings.append(organ_embedding)
         organ_info.append(avg_pool(torch.cat(embeddings, dim=-1)))
     organ_info = torch.cat(organ_info, dim=0)
     return organ_info
