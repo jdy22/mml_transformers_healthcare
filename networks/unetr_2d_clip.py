@@ -41,19 +41,29 @@ def get_organ_info(labels, organ_tokens):
     Information is concatenated and then global average pooling is applied
     """
     batch_size = labels.shape[0]
-    x_full = x[None, 0]
+    organ_info = []
+    avg_pool = nn.AdaptiveAvgPool1d(1)
     organs_present = torch.unique(labels[0])
+    embeddings = []
     for organ in range(1, 16):
         if organ in organs_present:
-            x_full = torch.cat((x_full, organ_tokens[str(organ)]), dim=1)
+            organ_embedding = torch.squeeze(organ_tokens[str(organ)])
+            organ_embedding = torch.unsqueeze(organ_embedding, dim=0)
+            organ_embedding = torch.unsqueeze(organ_embedding, dim=-1)
+            embeddings.append(organ_embedding)
+    organ_info.append(avg_pool(torch.cat(embeddings, dim=-1)))
     for i in range(1, batch_size):
-        embeddings = x[None, i]
         organs_present = torch.unique(labels[i])
+        embeddings = []
         for organ in range(1, 16):
             if organ in organs_present:
-                embeddings = torch.cat((embeddings, organ_tokens[str(organ)]), dim=1)
-        x_full = torch.cat((x_full, embeddings), dim=0)
-    return x_full
+                organ_embedding = torch.squeeze(organ_tokens[str(organ)])
+                organ_embedding = torch.unsqueeze(organ_embedding, dim=0)
+                organ_embedding = torch.unsqueeze(organ_embedding, dim=-1)
+                embeddings.append(organ_embedding)
+        organ_info.append(avg_pool(torch.cat(embeddings, dim=-1)))
+    organ_info = torch.cat(organ_info, dim=0)
+    return organ_info
 
 
 class ViT_clip(nn.Module):
@@ -150,6 +160,7 @@ class ViT_clip(nn.Module):
         x_out = x_full[:, :n_patches, :]
 
         return x_out, hidden_states_out                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+
 
 class UNETR_2D_clip(nn.Module):
     """
@@ -335,10 +346,11 @@ class UNETR_2D_clip(nn.Module):
             self.organ_tokens_CT = {k: v.to(device="cuda:0") for k, v in ct_pos_embeddings.items()}
             self.organ_tokens_MRI = {k: v.to(device="cuda:0") for k, v in mri_pos_embeddings.items()}
             self.pool_image = nn.Sequential(
-                nn.GroupNorm(16, 768),
+                nn.GroupNorm(16, self.hidden_size),
                 nn.ReLU(inplace=True),
                 torch.nn.AdaptiveAvgPool2d((1,1)),
             )
+            self.controller = nn.Conv1d(2*self.hidden_size, 153, kernel_size=1, stride=1, padding=0)
 
 
     def proj_feat(self, x, hidden_size, feat_size):
@@ -367,35 +379,41 @@ class UNETR_2D_clip(nn.Module):
         dec2 = self.decoder4(dec3, enc3)
         dec1 = self.decoder3(dec2, enc2)
         out = self.decoder2(dec1, enc1)
+        print(out.shape)
 
         if self.info_mode == "early":
             logits = self.out(out)
         elif self.info_mode == "late":
             image_feat = self.pool_image(dec4) # shape = [40, 768, 1, 1]
+            if modality == "CT":
+                organ_feat = get_organ_info(labels, self.organ_tokens_CT) # shape = [40, 768, 1]
+            elif modality == "MRI":
+                organ_feat = get_organ_info(labels, self.organ_tokens_MRI) # shape = [40, 768, 1]
+            image_feat = torch.squeeze(image_feat, dim=-1) # shape = [40, 768, 1]
+            controller_in = torch.cat((image_feat, organ_feat), dim=1) # shape = [40, 1536, 1]
+            params = self.controller(controller_in) # shape = [40, 153, 1]
             logits = None
 
         return logits
     
 
 if __name__ == "__main__":
-    # model = UNETR_2D_clip(
-    #     in_channels=1,
-    #     out_channels=16,
-    #     img_size=(112, 112),
-    #     feature_size=64,
-    #     hidden_size=768,
-    #     mlp_dim=3072,
-    #     num_heads=12,
-    #     pos_embed="perceptron",
-    #     norm_name="instance",
-    #     conv_block=True,
-    #     res_block=True,
-    #     dropout_rate=0.0,
-    #     info_mode="early",
-    # )
+    model = UNETR_2D_clip(
+        in_channels=1,
+        out_channels=16,
+        img_size=(112, 112),
+        feature_size=64,
+        hidden_size=768,
+        mlp_dim=3072,
+        num_heads=12,
+        pos_embed="perceptron",
+        norm_name="instance",
+        conv_block=True,
+        res_block=True,
+        dropout_rate=0.0,
+        info_mode="early",
+    )
 
-    # x = torch.zeros((40, 2, 112, 112))
-    # logits = model(x, modality="MRI")
-    # print(logits.shape)
-
-    print(ct_pos_embeddings["1"].shape)
+    x = torch.zeros((40, 2, 112, 112))
+    logits = model(x, modality="MRI")
+    print(logits.shape)
