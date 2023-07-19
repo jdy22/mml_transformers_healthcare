@@ -6,7 +6,7 @@ import pickle
 def create_dictionary(embeddings):
     embeddings_dict = {}
     for organ in range(len(embeddings)):
-        embeddings_dict[str(organ+1)] = embeddings[None, None, organ]
+        embeddings_dict[str(organ)] = embeddings[None, None, organ]
 
     return embeddings_dict
 
@@ -16,6 +16,7 @@ def main():
     model, preprocess = clip.load("ViT-L/14", device=device)
 
     ct_pos_prompts = [
+        "a computerized tomography with no organs",
         "a computerized tomography of a spleen",
         "a computerized tomography of a right kidney",
         "a computerized tomography of a left kidney",
@@ -34,6 +35,7 @@ def main():
             ]
 
     ct_neg_prompts = [
+        "a computerized tomography with no organs",
         "a computerized tomography without a spleen",
         "a computerized tomography without a right kidney",
         "a computerized tomography without a left kidney",
@@ -52,6 +54,7 @@ def main():
             ]
 
     mri_pos_prompts = [
+        "a magnetic resonance image with no organs",
         "a magnetic resonance image of a spleen",
         "a magnetic resonance image of a right kidney",
         "a magnetic resonance image of a left kidney",
@@ -70,6 +73,7 @@ def main():
             ]
 
     mri_neg_prompts = [
+        "a magnetic resonance image with no organs",
         "a magnetic resonance image without a spleen",
         "a magnetic resonance image without a right kidney",
         "a magnetic resonance image without a left kidney",

@@ -406,7 +406,6 @@ class UNETR_2D_clip(nn.Module):
         dec2 = self.decoder4(dec3, enc3)
         dec1 = self.decoder3(dec2, enc2)
         out = self.decoder2(dec1, enc1) # shape = [40, 64, 112, 112]
-        print(out.shape)
 
         if self.info_mode == "early":
             logits = self.out(out)
