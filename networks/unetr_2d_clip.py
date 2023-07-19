@@ -34,6 +34,28 @@ mri_pos_embeddings = clip_embeddings[2]
 mri_neg_embeddings = clip_embeddings[3]
 
 
+def get_organ_info(labels, organ_tokens):
+    """
+    labels : To indicate which organs are present
+    organ_tokens : Dicts with relevant tokens to add (CLIP embeddings)
+    Information is concatenated and then global average pooling is applied
+    """
+    batch_size = labels.shape[0]
+    x_full = x[None, 0]
+    organs_present = torch.unique(labels[0])
+    for organ in range(1, 16):
+        if organ in organs_present:
+            x_full = torch.cat((x_full, organ_tokens[str(organ)]), dim=1)
+    for i in range(1, batch_size):
+        embeddings = x[None, i]
+        organs_present = torch.unique(labels[i])
+        for organ in range(1, 16):
+            if organ in organs_present:
+                embeddings = torch.cat((embeddings, organ_tokens[str(organ)]), dim=1)
+        x_full = torch.cat((x_full, embeddings), dim=0)
+    return x_full
+
+
 class ViT_clip(nn.Module):
     """
     Vision Transformer (ViT), based on: "Dosovitskiy et al.,
@@ -310,7 +332,13 @@ class UNETR_2D_clip(nn.Module):
         if self.info_mode == "early":
             self.out = UnetOutBlock(spatial_dims=2, in_channels=feature_size, out_channels=out_channels)
         elif self.info_mode == "late":
-            pass
+            self.organ_tokens_CT = {k: v.to(device="cuda:0") for k, v in ct_pos_embeddings.items()}
+            self.organ_tokens_MRI = {k: v.to(device="cuda:0") for k, v in mri_pos_embeddings.items()}
+            self.pool_image = nn.Sequential(
+                nn.GroupNorm(16, 768),
+                nn.ReLU(inplace=True),
+                torch.nn.AdaptiveAvgPool2d((1,1)),
+            )
 
 
     def proj_feat(self, x, hidden_size, feat_size):
@@ -343,28 +371,31 @@ class UNETR_2D_clip(nn.Module):
         if self.info_mode == "early":
             logits = self.out(out)
         elif self.info_mode == "late":
+            image_feat = self.pool_image(dec4) # shape = [40, 768, 1, 1]
             logits = None
 
         return logits
     
 
 if __name__ == "__main__":
-    model = UNETR_2D_clip(
-        in_channels=1,
-        out_channels=16,
-        img_size=(112, 112),
-        feature_size=64,
-        hidden_size=768,
-        mlp_dim=3072,
-        num_heads=12,
-        pos_embed="perceptron",
-        norm_name="instance",
-        conv_block=True,
-        res_block=True,
-        dropout_rate=0.0,
-        info_mode="early",
-    )
+    # model = UNETR_2D_clip(
+    #     in_channels=1,
+    #     out_channels=16,
+    #     img_size=(112, 112),
+    #     feature_size=64,
+    #     hidden_size=768,
+    #     mlp_dim=3072,
+    #     num_heads=12,
+    #     pos_embed="perceptron",
+    #     norm_name="instance",
+    #     conv_block=True,
+    #     res_block=True,
+    #     dropout_rate=0.0,
+    #     info_mode="early",
+    # )
 
-    x = torch.zeros((40, 2, 112, 112))
-    logits = model(x, modality="MRI")
-    print(logits.shape)
+    # x = torch.zeros((40, 2, 112, 112))
+    # logits = model(x, modality="MRI")
+    # print(logits.shape)
+
+    print(ct_pos_embeddings["1"].shape)
