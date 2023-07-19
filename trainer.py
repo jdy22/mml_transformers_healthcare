@@ -88,7 +88,7 @@ def train_epoch(model, loader, optimizer, scaler, epoch, loss_func, args):
                 logits = model(data_in)
             elif "organ_classif" in args.additional_information:
                 seg_logits, class_logits = model(data, test_mode=False, class_layer=args.classification_layer)
-            elif args.additional_information == "clip_early":
+            elif "clip" in args.additional_information:
                 data_in = torch.cat((data, target), dim=1)
                 logits = model(data_in, modality)
             else:
@@ -177,7 +177,7 @@ def val_epoch(model, loader, epoch, acc_func, args, model_inferer=None, post_lab
                         logits = model_inferer(data_in)
                     elif "organ_classif" in args.additional_information:
                         logits = model_inferer(data, test_mode=True, class_layer=args.classification_layer)
-                    elif args.additional_information == "clip_early":
+                    elif "clip" in args.additional_information:
                         data_in = torch.cat((data, target), dim=1)
                         logits = model_inferer(data_in, modality=modality)
                     else:

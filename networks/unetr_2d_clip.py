@@ -15,6 +15,7 @@ from collections.abc import Sequence
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import pickle
 
 from monai.networks.blocks.patchembedding import PatchEmbeddingBlock
@@ -131,16 +132,16 @@ class ViT_clip(nn.Module):
         )
         self.norm = nn.LayerNorm(hidden_size)
 
-        # self.organ_tokens_CT = {k: v.to(device="cuda:0") for k, v in ct_pos_embeddings.items()}
-        # self.no_organ_tokens_CT = {k: v.to(device="cuda:0") for k, v in ct_neg_embeddings.items()}
-        # self.organ_tokens_MRI = {k: v.to(device="cuda:0") for k, v in mri_pos_embeddings.items()}
-        # self.no_organ_tokens_MRI = {k: v.to(device="cuda:0") for k, v in mri_neg_embeddings.items()}
+        self.organ_tokens_CT = {k: v.to(device="cuda:0") for k, v in ct_pos_embeddings.items()}
+        self.no_organ_tokens_CT = {k: v.to(device="cuda:0") for k, v in ct_neg_embeddings.items()}
+        self.organ_tokens_MRI = {k: v.to(device="cuda:0") for k, v in mri_pos_embeddings.items()}
+        self.no_organ_tokens_MRI = {k: v.to(device="cuda:0") for k, v in mri_neg_embeddings.items()}
 
         # For testing only
-        self.organ_tokens_CT = ct_pos_embeddings
-        self.no_organ_tokens_CT = ct_neg_embeddings
-        self.organ_tokens_MRI = mri_pos_embeddings
-        self.no_organ_tokens_MRI = mri_neg_embeddings
+        # self.organ_tokens_CT = ct_pos_embeddings
+        # self.no_organ_tokens_CT = ct_neg_embeddings
+        # self.organ_tokens_MRI = mri_pos_embeddings
+        # self.no_organ_tokens_MRI = mri_neg_embeddings
 
 
     def forward(self, x_in, modality):
@@ -356,13 +357,33 @@ class UNETR_2D_clip(nn.Module):
                 nn.ReLU(inplace=True),
                 torch.nn.AdaptiveAvgPool2d((1,1)),
             )
-            self.controller = nn.Conv1d(2*self.hidden_size, 153, kernel_size=1, stride=1, padding=0)
+            self.controller = nn.Conv1d(2*self.hidden_size, 816, kernel_size=1, stride=1, padding=0)
+            self.pre_out = nn.Sequential(
+                nn.GroupNorm(16, feature_size),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(feature_size, 16, kernel_size=1)
+            )
 
 
     def proj_feat(self, x, hidden_size, feat_size):
         x = x.view(x.size(0), feat_size[0], feat_size[1], hidden_size)
         x = x.permute(0, 3, 1, 2).contiguous()
         return x
+    
+
+    def segmentor(self, x, params):
+        # x shape = [1, 16, 112, 112]
+        # params shape = [816]
+        conv1_w = torch.reshape(params[:256], (16, 16, 1, 1))
+        conv1_b = params[256:272]
+        conv2_w = torch.reshape(params[272:528], (16, 16, 1, 1))
+        conv2_b = params[528:544]
+        conv3_w = torch.reshape(params[544:800], (16, 16, 1, 1))
+        conv3_b = params[800:]
+        x2 = F.conv2d(x, weight=conv1_w, bias=conv1_b)
+        x3 = F.conv2d(x2, weight=conv2_w, bias=conv2_b)
+        out = F.conv2d(x3, weight=conv3_w, bias=conv3_b)
+        return out
     
 
     def forward(self, x_in, modality):
@@ -384,7 +405,7 @@ class UNETR_2D_clip(nn.Module):
         dec3 = self.decoder5(dec4, enc4)
         dec2 = self.decoder4(dec3, enc3)
         dec1 = self.decoder3(dec2, enc2)
-        out = self.decoder2(dec1, enc1)
+        out = self.decoder2(dec1, enc1) # shape = [40, 64, 112, 112]
         print(out.shape)
 
         if self.info_mode == "early":
@@ -397,8 +418,15 @@ class UNETR_2D_clip(nn.Module):
                 organ_feat = get_organ_info(labels, self.organ_tokens_MRI) # shape = [40, 768, 1]
             image_feat = torch.squeeze(image_feat, dim=-1) # shape = [40, 768, 1]
             controller_in = torch.cat((image_feat, organ_feat), dim=1) # shape = [40, 1536, 1]
-            params = self.controller(controller_in) # shape = [40, 153, 1]
-            logits = None
+            segmentor_params = self.controller(controller_in) # shape = [40, 816, 1]
+            segmentor_in = self.pre_out(out) # shape = [40, 16, 112, 112]
+            logits = []
+            for i in range(segmentor_in.shape[0]):
+                x_segmentor = segmentor_in[None, i, :, :, :] # shape = [1, 16, 112, 112]
+                params = segmentor_params[i, :, 0] # shape = [816]
+                segmentor_out = self.segmentor(x_segmentor, params) # shape = [1, 16, 112, 112]
+                logits.append(segmentor_out)
+            logits = torch.cat(logits, dim=0) # shape = [40, 16, 112, 112]
 
         return logits
     
