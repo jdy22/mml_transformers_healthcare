@@ -1,6 +1,6 @@
 {
   "checkpoint": null,
-  "logdir": "./runs_clip/test",
+  "logdir": "./runs_clip/run2",
   "pretrained_dir": null,
   "data_dir": "./amos22/",
   "json_list": "dataset_internal_val.json",
@@ -14,7 +14,7 @@
   "reg_weight": 1e-05,
   "momentum": 0.99,
   "noamp": false,
-  "val_every": 1,
+  "val_every": 20,
   "distributed": false,
   "world_size": 1,
   "rank": 0,
