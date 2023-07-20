@@ -391,7 +391,9 @@ class UNETR_2D_clip(nn.Module):
         conv3_w = torch.reshape(params[544:800], (16, 16, 1, 1))
         conv3_b = params[800:]
         x2 = F.conv2d(x, weight=conv1_w, bias=conv1_b)
+        x2 = F.relu(x2)
         x3 = F.conv2d(x2, weight=conv2_w, bias=conv2_b)
+        x3 = F.relu(x3)
         out = F.conv2d(x3, weight=conv3_w, bias=conv3_b)
         return out
     
