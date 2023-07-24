@@ -95,7 +95,7 @@ def visualise_predictions(args, model, loader, modality, image_index, num_sample
                 val_outputs = sliding_window_inference(val_inputs_full, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap)
             elif "organ_classif" in args.additional_information:
                 val_outputs = sliding_window_inference(val_inputs, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, test_mode=True, class_layer=args.classification_layer)
-            elif args.additional_information == "clip_early":
+            elif "clip" in args.additional_information:
                 val_inputs_full = torch.cat((val_inputs, val_labels), dim=1)
                 val_outputs = sliding_window_inference(val_inputs_full, (args.roi_x, args.roi_y), 1, model, overlap=args.infer_overlap, modality=modality)
             else:
@@ -304,6 +304,22 @@ def main():
                 res_block=True,
                 dropout_rate=args.dropout_rate,
                 info_mode="early",
+            )
+        elif args.additional_information == "clip_late":
+            model = UNETR_2D_clip(
+                in_channels=args.in_channels,
+                out_channels=args.out_channels,
+                img_size=(args.roi_x, args.roi_y),
+                feature_size=args.feature_size,
+                hidden_size=args.hidden_size,
+                mlp_dim=args.mlp_dim,
+                num_heads=args.num_heads,
+                pos_embed=args.pos_embed,
+                norm_name=args.norm_name,
+                conv_block=True,
+                res_block=True,
+                dropout_rate=args.dropout_rate,
+                info_mode="late",
             )
         else:
             model = UNETR_2D(
