@@ -141,7 +141,7 @@ def display_image_and_labels_2d(img, lbls, z=None, window=None, level=None, colo
     cbar = fig.colorbar(mappable=im2, cax=cax, ticks=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
     cbar.ax.set_yticklabels(["Background", "Spleen", "Right kidney", "Left kidney", "Gall bladder", "Esophagus", "Liver",
                              "Stomach", "Aorta", "Postcava", "Pancreas", "Right adrenal gland", "Left adrenal gland",
-                             "Duodenum", "Bladder", "Prostrate/uterus"])
+                             "Duodenum", "Bladder", "Prostate/uterus"])
     cbar.ax.tick_params(labelsize=8)
 
     plt.show()
@@ -194,7 +194,7 @@ def display_image_and_labels(img, lbls, x=None, y=None, z=None, window=None, lev
     cbar = fig.colorbar(mappable=im4, cax=cax, ticks=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
     cbar.ax.set_yticklabels(["Background", "Spleen", "Right kidney", "Left kidney", "Gall bladder", "Esophagus", "Liver",
                              "Stomach", "Aorta", "Postcava", "Pancreas", "Right adrenal gland", "Left adrenal gland",
-                             "Duodenum", "Bladder", "Prostrate/uterus"])
+                             "Duodenum", "Bladder", "Prostate/uterus"])
     cbar.ax.tick_params(labelsize=8)
 
     plt.show()
@@ -260,7 +260,7 @@ def plot_save_predictions(x, y_pred, y_true, image_index, sample_no, args, modal
     cbar = fig.colorbar(mappable=im2, cax=cax, ticks=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
     cbar.ax.set_yticklabels(["Background", "Spleen", "Right kidney", "Left kidney", "Gall bladder", "Esophagus", "Liver",
                              "Stomach", "Aorta", "Postcava", "Pancreas", "Right adrenal gland", "Left adrenal gland",
-                             "Duodenum", "Bladder", "Prostrate/uterus"])
+                             "Duodenum", "Bladder", "Prostate/uterus"])
     cbar.ax.tick_params(labelsize=8)
 
     plt.savefig(fname=(args.pretrained_dir + modality + "_prediction_" + str(image_index) + "_" + str(sample_no) + ".png"))
