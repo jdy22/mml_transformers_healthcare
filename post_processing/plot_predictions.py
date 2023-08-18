@@ -29,7 +29,7 @@ from monai.utils.misc import set_determinism
 
 parser = argparse.ArgumentParser(description="UNETR segmentation pipeline")
 parser.add_argument(
-    "--pretrained_dir", default="./runs_modality/run1/", type=str, help="pretrained checkpoint directory"
+    "--pretrained_dir", default="./runs/rerun18-3/", type=str, help="pretrained checkpoint directory"
 )
 parser.add_argument("--data_dir", default="./amos22/", type=str, help="dataset directory")
 parser.add_argument("--json_list", default="dataset_internal_val.json", type=str, help="dataset json file")
@@ -74,7 +74,7 @@ parser.add_argument("--val_samples", default=20, type=int, help="number of sampl
 parser.add_argument("--train_sampling", default="uniform", type=str, help="sampling distribution of organs during training")
 parser.add_argument("--preprocessing", default=2, type=int, help="preprocessing option")
 parser.add_argument("--data_augmentation", action="store_false", help="use data augmentation during training")
-parser.add_argument("--additional_information", default="modality_concat", help="additional information provided to segmentation model")
+parser.add_argument("--additional_information", default="none", help="additional information provided to segmentation model")
 parser.add_argument("--classification_layer", default=3, type=int, help="Transformer layer for classification")
 
 
@@ -342,8 +342,8 @@ def main():
     model.to(device)
 
     with torch.no_grad():
-        visualise_predictions(args, model, loader_ct, modality="CT", image_index=0, num_samples=5)
-        visualise_predictions(args, model, loader_mri, modality="MRI", image_index=0, num_samples=5)
+        visualise_predictions(args, model, loader_ct, modality="CT", image_index=5, num_samples=20)
+        visualise_predictions(args, model, loader_mri, modality="MRI", image_index=5, num_samples=20)
 
 
 if __name__ == "__main__":
