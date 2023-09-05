@@ -1,4 +1,17 @@
-# Individual_Project
+# Context-Aware Transformers for Medical Image Segmentation
+
+This repository contains all of the code to train and evaluate the models investigated in the individual project 'Context-Aware Transformers for Medical Image Segmentation'. The code is based on the original UNETR code, which is available at https://monai.io/research/unetr and cloned in the 'monai_research_contributions_main' folder of this repository. To carry out the experiments in this project, the original UNETR code has been adapted from 3D to 2D and various options for multi-modal learning have been added.
+
+## Running the code
+
+### Getting started
+
+- Clone this repository and install all of the libraries in requirements.txt. 
+- Download the AMOS dataset, which is available at https://zenodo.org/record/7155725#.Y0OOCOxBztM, and save it in the repository folder. The dataset must be contained in a folder named 'amos22'.
+
+### Training a model
+
+### Evaluating a model
 
 
 

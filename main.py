@@ -481,7 +481,7 @@ if __name__ == "__main__":
     # set_determinism()
     
     # args = parser.parse_args()
-    # args.test_mode = False
+    # args.test_mode = True
     # args.test_type = "validation"
     # args.data_dir = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/"
     # args.json_list = "dataset_small.json"

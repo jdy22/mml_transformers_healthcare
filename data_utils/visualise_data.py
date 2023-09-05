@@ -1,6 +1,7 @@
 import numpy as np
 import SimpleITK as sitk
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 from matplotlib.colors import ListedColormap
 from monai import transforms
 
@@ -44,10 +45,16 @@ def plot_intensity_histogram_from_tensor_ct_mri(img_ct, img_mri):
     img_array_ct = array_transform(img_ct)
     img_array_mri = array_transform(img_mri)
 
+    mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=["tab:green", "tab:blue"]) 
+
+    plt.figure(figsize=(8,3))
     plt.hist(img_array_ct.flatten(), bins=128, density=True, alpha=0.5, label='CT')
     plt.hist(img_array_mri.flatten(), bins=128, density=True, alpha=0.5, label='MRI')
     plt.legend(loc='upper right')
     plt.ylim([0, 2])
+    plt.xlabel("Intensity")
+    plt.ylabel("Probability density")
+    # plt.title("Intensity histograms of a normalised CT and MRI image")
     plt.show()
 
 
@@ -283,8 +290,8 @@ if __name__ == "__main__":
     # display_image_and_labels_2d(image, labels, window=600, level=200)
     # plot_intensity_histogram(image)
 
-    # image_filename_ct = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/imagesTr/amos_0083.nii.gz"
-    # image_ct = sitk.ReadImage(image_filename_ct)
+    image_filename_ct = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/imagesTr/amos_0083.nii.gz"
+    image_ct = sitk.ReadImage(image_filename_ct)
 
     # image_filename_mri = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/imagesTr/amos_0600.nii.gz"
     # image_mri = sitk.ReadImage(image_filename_mri)
