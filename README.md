@@ -11,6 +11,26 @@ This repository contains all of the code to train and evaluate the models invest
 
 ### Training a model
 
+A model can be trained by running the main.py file. The value of the argument 'additional_information' in line 106 can be changed to specify different methods of adding contextual information to the model. To train each of the models discussed in the project report, the following values of 'additional_information' should be set:
+
+| Model number | Type of information | Embeddings used | Fusion method | Value of 'additional_information' |
+| -------- | ------- | ------- | ------- | ------- |
+| 1 | Organ | Learnable | Early concatenation | "organ" |
+| 2 | Organ | CLIP | Early concatenation | "clip_early" |
+| 3a | Organ | Learnable | Intermediate concatenation | "organ_inter" |
+| 3b | Organ | Learnable | Intermediate concatenation | "organ_inter2" |
+| 3c | Organ | Learnable | Intermediate concatenation | "organ_inter3" |
+| 4 | Organ | Learnable | Late concatenation | "organ_late" |
+| 5 | Organ | CLIP | CLIP-driven inspired | "clip_late" |
+| 6a | Image modality | Learnable | Early concatenation | "modality_concat" |
+| 6b | Image modality | Learnable | Early concatenation | "modality_concat2" |
+| 6c | Image modality | Learnable | Early summation | "modality_add" |
+| 7a | Image modality | - | Separate decoders and output layers | "modality_decoder" |
+| 7b | Image modality | - | Separate decoders and output layers | "modality_decoder_pretrained" |
+| 8 | - | - | Joint classification and segmentation | "organ_classif_inter3" |
+
+A training log and the best model will be saved to the log directory specified by the argument 'logdir' in line 40.
+
 ### Evaluating a model
 
 
