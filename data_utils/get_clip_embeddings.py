@@ -1,3 +1,5 @@
+### Code to obtain and save the CLIP embeddings required for the context-aware 2D UNETR models
+
 import torch
 import clip
 import pickle

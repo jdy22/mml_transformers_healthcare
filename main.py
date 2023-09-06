@@ -9,6 +9,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### Main file which sets all of the arguments required for and runs the model training for the context-aware and baseline 2D UNETR models
+# Adapted from the original UNETR code
+
 import argparse
 import os
 from functools import partial

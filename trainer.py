@@ -9,6 +9,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### Functions to train the context-aware and baseline 2D UNETR models
+# Adapted from the original UNETR code
+
 import os
 import shutil
 import time

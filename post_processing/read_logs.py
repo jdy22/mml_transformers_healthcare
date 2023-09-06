@@ -1,3 +1,5 @@
+### Code to read the logs saved during training
+
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 import matplotlib.pyplot as plt
 

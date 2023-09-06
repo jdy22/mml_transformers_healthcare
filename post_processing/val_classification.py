@@ -9,7 +9,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-### TO DO: UPDATE TO USE TEST SET
+### Code to evaluate the classification accuracy of a joint segmentation and classification model
+# Adapted from the original UNETR code
 
 import argparse
 import os

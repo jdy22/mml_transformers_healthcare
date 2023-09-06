@@ -9,6 +9,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### Code to evaluate the performance of a segmentation model
+# Adapted from the original UNETR code
+
 import argparse
 import os
 

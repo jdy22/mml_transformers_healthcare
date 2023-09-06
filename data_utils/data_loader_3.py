@@ -9,6 +9,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### Functions for preprocessing pipeline 3
+# Adapted from the original UNETR code
+
 import math
 import os
 

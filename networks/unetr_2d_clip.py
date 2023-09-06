@@ -9,6 +9,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### Model architecture of context-aware 2D UNETR models which use CLIP embeddings
+# Adapted from the original UNETR code
+
 from typing import Tuple, Union
 
 from collections.abc import Sequence

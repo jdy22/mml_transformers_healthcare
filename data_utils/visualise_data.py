@@ -1,3 +1,5 @@
+### Various functions to visualise the images and model predictions
+
 import numpy as np
 import SimpleITK as sitk
 import matplotlib.pyplot as plt

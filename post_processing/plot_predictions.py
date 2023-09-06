@@ -9,6 +9,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### Code to visualise predictions made by a saved model on a sample image
+# Adapted from the original UNETR code
+
 import argparse
 import os
 
