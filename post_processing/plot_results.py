@@ -658,6 +658,306 @@ def plot_method_results4():
     plt.show()
 
 
+def plot_best_results_pres():
+    scores_dice = ("CT", "MRI")
+    values_dice = {
+        'Early concatenation of organ information with learnable embeddings': (83.1, 78.5),
+        'Baseline model': (79.7, 74.4),
+    }
+
+    scores_hd95 = ("CT", "MRI")
+    values_hd95 = {
+        'Early concatenation of organ information with learnable embeddings': (7.1, 7.5),
+        'Baseline model': (8.2, 8.0),
+    }
+
+    scores_MP = ("CT", "MRI")
+    values_MP = {
+        'Early concatenation of organ information with learnable embeddings': (0.97, 1.18),
+        'Baseline model': (3.35, 4.34),
+    }
+
+    x = np.arange(2)  # the label locations
+    width = 0.3  # the width of the bars
+
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, layout='constrained')
+    fig.set_figheight(4)
+    fig.set_figwidth(10)
+
+    multiplier = 0
+    for model, value in values_dice.items():
+        offset = width * multiplier
+        rects = ax1.bar(x + offset, value, width, label=model)
+        ax1.bar_label(rects, fmt="{:.1f}", padding=3, fontsize=10)
+        multiplier += 1
+
+    multiplier = 0
+    for model, value in values_hd95.items():
+        offset = width * multiplier
+        rects = ax2.bar(x + offset, value, width, label="_")
+        ax2.bar_label(rects, fmt="{:.1f}", padding=3, fontsize=10)
+        multiplier += 1
+
+    multiplier = 0
+    for model, value in values_MP.items():
+        offset = width * multiplier
+        rects = ax3.bar(x + offset, value, width, label="_")
+        ax3.bar_label(rects, fmt="{:.2f}", padding=3, fontsize=10)
+        multiplier += 1
+
+    ax1.set_xticks(x + 1*width, scores_dice, fontsize=10)
+    ax2.set_xticks(x + 1*width, scores_hd95, fontsize=10)
+    ax3.set_xticks(x + 1*width, scores_MP, fontsize=10)
+    ax1.set_xlabel('mDice (%)', fontsize=11)
+    ax2.set_xlabel('mHD95 (mm)', fontsize=11)
+    ax3.set_xlabel('Missed predictions (%)', fontsize=11)
+    ax1.set_ylim(70, 85)
+    ax2.set_ylim(7, 8.5)
+    ax3.set_ylim(0, 5)
+    ax1.set_yticks([])
+    ax2.set_yticks([])
+    ax3.set_yticks([])
+
+    box1 = ax1.get_position()
+    ax1.set_position([box1.x0, box1.y0, box1.width*1.1, box1.height*0.9])
+    box2 = ax2.get_position()
+    ax2.set_position([box2.x0, box2.y0, box2.width*1.1, box2.height*0.9])
+    box3 = ax3.get_position()
+    ax3.set_position([box3.x0, box3.y0, box3.width*1.1, box3.height*0.9])
+
+    fig.legend(bbox_to_anchor=(0.525,1.0), loc='upper center', ncols=1, fontsize=10)
+
+    plt.show()
+
+
+def plot_type_results_pres():
+    scores_dice = ("CT", "MRI")
+    values_dice = {
+        'Early concatenation of organ information with learnable embeddings': (83.1, 78.5),
+        'Early concatenation of image modality information with learnable embeddings': (79.6, 74.9),
+        'Baseline model': (79.7, 74.4),
+    }
+
+    scores_hd95 = ("CT", "MRI")
+    values_hd95 = {
+        'Early concatenation of organ information with learnable embeddings': (7.1, 7.5),
+        'Early concatenation of image modality information with learnable embeddings': (8.3, 8.2),
+        'Baseline model': (8.2, 8.0),
+    }
+
+    scores_MP = ("CT", "MRI")
+    values_MP = {
+        'Early concatenation of organ information with learnable embeddings': (0.97, 1.18),
+        'Early concatenation of image modality information with learnable embeddings': (3.32, 3.99),
+        'Baseline model': (3.35, 4.34),
+    }
+
+    x = np.arange(2)  # the label locations
+    width = 0.25  # the width of the bars
+
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, layout='constrained')
+    fig.set_figheight(4)
+    fig.set_figwidth(10)
+
+    multiplier = 0
+    for model, value in values_dice.items():
+        offset = width * multiplier
+        rects = ax1.bar(x + offset, value, width, label=model)
+        ax1.bar_label(rects, fmt="{:.1f}", padding=3, fontsize=10)
+        multiplier += 1
+
+    multiplier = 0
+    for model, value in values_hd95.items():
+        offset = width * multiplier
+        rects = ax2.bar(x + offset, value, width, label="_")
+        ax2.bar_label(rects, fmt="{:.1f}", padding=3, fontsize=10)
+        multiplier += 1
+
+    multiplier = 0
+    for model, value in values_MP.items():
+        offset = width * multiplier
+        rects = ax3.bar(x + offset, value, width, label="_")
+        ax3.bar_label(rects, fmt="{:.2f}", padding=3, fontsize=10)
+        multiplier += 1
+
+    ax1.set_xticks(x + 1*width, scores_dice, fontsize=10)
+    ax2.set_xticks(x + 1*width, scores_hd95, fontsize=10)
+    ax3.set_xticks(x + 1*width, scores_MP, fontsize=10)
+    ax1.set_xlabel('mDice (%)', fontsize=11)
+    ax2.set_xlabel('mHD95 (mm)', fontsize=11)
+    ax3.set_xlabel('Missed predictions (%)', fontsize=11)
+    ax1.set_ylim(70, 85)
+    ax2.set_ylim(7, 8.5)
+    ax3.set_ylim(0, 5)
+    ax1.set_yticks([])
+    ax2.set_yticks([])
+    ax3.set_yticks([])
+
+    box1 = ax1.get_position()
+    ax1.set_position([box1.x0, box1.y0, box1.width*1.1, box1.height*0.9])
+    box2 = ax2.get_position()
+    ax2.set_position([box2.x0, box2.y0, box2.width*1.1, box2.height*0.9])
+    box3 = ax3.get_position()
+    ax3.set_position([box3.x0, box3.y0, box3.width*1.1, box3.height*0.9])
+
+    fig.legend(bbox_to_anchor=(0.525,1.0), loc='upper center', ncols=1, fontsize=10)
+
+    plt.show()
+
+
+def plot_embeddings_results_pres():
+    scores_dice = ("CT", "MRI")
+    values_dice = {
+        'Early concatenation of organ information with learnable embeddings': (83.1, 78.5),
+        'Early concatenation of organ information with CLIP embeddings': (82.9, 78.7),
+        'Baseline model': (79.7, 74.4),
+    }
+
+    scores_hd95 = ("CT", "MRI")
+    values_hd95 = {
+        'Early concatenation of organ information with learnable embeddings': (7.1, 7.5),
+        'Early concatenation of organ information with CLIP embeddings': (7.2, 7.4),
+        'Baseline model': (8.2, 8.0),
+    }
+
+    scores_MP = ("CT", "MRI")
+    values_MP = {
+        'Early concatenation of organ information with learnable embeddings': (0.97, 1.18),
+        'Early concatenation of organ information with CLIP embeddings': (1.03, 1.34),
+        'Baseline model': (3.35, 4.34),
+    }
+
+    x = np.arange(2)  # the label locations
+    width = 0.25  # the width of the bars
+
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, layout='constrained')
+    fig.set_figheight(4)
+    fig.set_figwidth(10)
+
+    multiplier = 0
+    for model, value in values_dice.items():
+        offset = width * multiplier
+        rects = ax1.bar(x + offset, value, width, label=model)
+        ax1.bar_label(rects, fmt="{:.1f}", padding=3, fontsize=10)
+        multiplier += 1
+
+    multiplier = 0
+    for model, value in values_hd95.items():
+        offset = width * multiplier
+        rects = ax2.bar(x + offset, value, width, label="_")
+        ax2.bar_label(rects, fmt="{:.1f}", padding=3, fontsize=10)
+        multiplier += 1
+
+    multiplier = 0
+    for model, value in values_MP.items():
+        offset = width * multiplier
+        rects = ax3.bar(x + offset, value, width, label="_")
+        ax3.bar_label(rects, fmt="{:.2f}", padding=3, fontsize=10)
+        multiplier += 1
+
+    ax1.set_xticks(x + 1*width, scores_dice, fontsize=10)
+    ax2.set_xticks(x + 1*width, scores_hd95, fontsize=10)
+    ax3.set_xticks(x + 1*width, scores_MP, fontsize=10)
+    ax1.set_xlabel('mDice (%)', fontsize=11)
+    ax2.set_xlabel('mHD95 (mm)', fontsize=11)
+    ax3.set_xlabel('Missed predictions (%)', fontsize=11)
+    ax1.set_ylim(70, 85)
+    ax2.set_ylim(7, 8.5)
+    ax3.set_ylim(0, 5)
+    ax1.set_yticks([])
+    ax2.set_yticks([])
+    ax3.set_yticks([])
+
+    box1 = ax1.get_position()
+    ax1.set_position([box1.x0, box1.y0, box1.width*1.1, box1.height*0.9])
+    box2 = ax2.get_position()
+    ax2.set_position([box2.x0, box2.y0, box2.width*1.1, box2.height*0.9])
+    box3 = ax3.get_position()
+    ax3.set_position([box3.x0, box3.y0, box3.width*1.1, box3.height*0.9])
+
+    fig.legend(bbox_to_anchor=(0.525,1.0), loc='upper center', ncols=1, fontsize=10)
+
+    plt.show()
+
+
+def plot_method_results_pres():
+    scores_dice = ("CT", "MRI")
+    values_dice = {
+        'Early concatenation of organ information with learnable embeddings': (83.1, 78.5),
+        'Intermediate concatenation of organ information with learnable embeddings': (81.1, 76.3),
+        'Late concatenation of organ information with learnable embeddings': (80.2, 75.2),
+        'Baseline model': (79.7, 74.4),
+    }
+
+    scores_hd95 = ("CT", "MRI")
+    values_hd95 = {
+        'Early concatenation of organ information with learnable embeddings': (7.1, 7.5),
+        'Intermediate concatenation of organ information with learnable embeddings': (7.5, 7.6),
+        'Late concatenation of organ information with learnable embeddings': (8.0, 8.3),
+        'Baseline model': (8.2, 8.0),
+    }
+
+    scores_MP = ("CT", "MRI")
+    values_MP = {
+        'Early concatenation of organ information with learnable embeddings': (0.97, 1.18),
+        'Intermediate concatenation of organ information with learnable embeddings': (2.06, 2.68),
+        'Late concatenation of organ information with learnable embeddings': (2.63, 3.44),
+        'Baseline model': (3.35, 4.34),
+    }
+
+    x = np.arange(2)  # the label locations
+    width = 0.2  # the width of the bars
+
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, layout='constrained')
+    fig.set_figheight(4)
+    fig.set_figwidth(10)
+
+    multiplier = 0
+    for model, value in values_dice.items():
+        offset = width * multiplier
+        rects = ax1.bar(x + offset, value, width, label=model)
+        ax1.bar_label(rects, fmt="{:.1f}", padding=3, fontsize=9)
+        multiplier += 1
+
+    multiplier = 0
+    for model, value in values_hd95.items():
+        offset = width * multiplier
+        rects = ax2.bar(x + offset, value, width, label="_")
+        ax2.bar_label(rects, fmt="{:.1f}", padding=3, fontsize=9)
+        multiplier += 1
+
+    multiplier = 0
+    for model, value in values_MP.items():
+        offset = width * multiplier
+        rects = ax3.bar(x + offset, value, width, label="_")
+        ax3.bar_label(rects, fmt="{:.2f}", padding=3, fontsize=9)
+        multiplier += 1
+
+    ax1.set_xticks(x + 3*width, scores_dice, fontsize=10)
+    ax2.set_xticks(x + 3*width, scores_hd95, fontsize=10)
+    ax3.set_xticks(x + 3*width, scores_MP, fontsize=10)
+    ax1.set_xlabel('mDice (%)', fontsize=11)
+    ax2.set_xlabel('mHD95 (mm)', fontsize=11)
+    ax3.set_xlabel('Missed predictions (%)', fontsize=10)
+    ax1.set_ylim(70, 85)
+    ax2.set_ylim(7, 8.5)
+    ax3.set_ylim(0, 5)
+    ax1.set_yticks([])
+    ax2.set_yticks([])
+    ax3.set_yticks([])
+
+    box1 = ax1.get_position()
+    ax1.set_position([box1.x0, box1.y0, box1.width*1.1, box1.height*0.82])
+    box2 = ax2.get_position()
+    ax2.set_position([box2.x0, box2.y0, box2.width*1.1, box2.height*0.82])
+    box3 = ax3.get_position()
+    ax3.set_position([box3.x0, box3.y0, box3.width*1.1, box3.height*0.82])
+
+    fig.legend(bbox_to_anchor=(0.525,1.0), loc='upper center', ncols=1, fontsize=10)
+
+    plt.show()
+
+
 if __name__ == "__main__":
     # mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=["tab:red", "tab:gray"]) 
     # plot_dice_scores_CT()
@@ -680,8 +980,8 @@ if __name__ == "__main__":
     # mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=["tab:red", "tab:green", "tab:gray"]) 
     # plot_embeddings_results()
 
-    mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=["tab:red", "tab:orange", "gold", "yellow", "lime", "pink", "tab:gray"]) 
-    plot_method_results1()
+    # mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=["tab:red", "tab:orange", "gold", "yellow", "lime", "pink", "tab:gray"]) 
+    # plot_method_results1()
 
     # mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=["deepskyblue", "tab:blue", "darkblue", "tab:gray"]) 
     # plot_method_results2()
@@ -691,3 +991,15 @@ if __name__ == "__main__":
 
     # mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=["darkgreen", "yellow", "tab:gray"]) 
     # plot_method_results4()
+
+    # mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=["tab:red", "tab:gray"]) 
+    # plot_best_results_pres()
+
+    # mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=["tab:red", "tab:blue", "tab:gray"]) 
+    # plot_type_results_pres()
+
+    # mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=["tab:red", "tab:green", "tab:gray"]) 
+    # plot_embeddings_results_pres()
+
+    mpl.rcParams['axes.prop_cycle'] = mpl.cycler(color=["tab:red", "tab:orange", "yellow", "tab:gray"]) 
+    plot_method_results_pres()
