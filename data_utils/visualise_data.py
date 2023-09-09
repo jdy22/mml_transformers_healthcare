@@ -275,6 +275,45 @@ def plot_save_predictions(x, y_pred, y_true, image_index, sample_no, args, modal
     plt.savefig(fname=(args.pretrained_dir + modality + "_prediction_" + str(image_index) + "_" + str(sample_no) + ".png"))
 
 
+def plot_save_predictions2(x, y_pred_best, y_pred_baseline, y_true, modality):
+    width = x.shape[0]
+    height = x.shape[1]
+
+    window = np.max(x) - np.min(x)
+    level = window / 2 + np.min(x)
+    low, high = wl_to_lh(window,level)
+
+    fig, ((ax1), (ax2), (ax3)) = plt.subplots(1, 3, figsize=(16, 3.5))
+
+    ax1.imshow(np.transpose(x), cmap='gray', clim=(low, high), extent=(0, width, height, 0))
+    ax1.imshow(np.transpose(y_true), cmap=organ_cmap2, clim=(-0.5, 15.5), alpha=0.5, extent=(0, width, height, 0))
+
+    ax2.imshow(np.transpose(x), cmap='gray', clim=(low, high), extent=(0, width, height, 0))
+    ax2.imshow(np.transpose(y_pred_best), cmap=organ_cmap2, clim=(-0.5, 15.5), alpha=0.5, extent=(0, width, height, 0))
+
+    ax3.imshow(np.transpose(x), cmap='gray', clim=(low, high), extent=(0, width, height, 0))
+    im3 = ax3.imshow(np.transpose(y_pred_baseline), cmap=organ_cmap2, clim=(-0.5, 15.5), alpha=0.5, extent=(0, width, height, 0))
+
+    for ax in [ax1, ax2]:
+        ax.set_xticks([])
+        ax.set_xticks([], minor=True)
+        ax.set_yticks([])
+        ax.set_yticks([], minor=True)
+
+    ax1.set_title("Expert labels", fontsize=11)
+    ax2.set_title("Best-performing context-aware model predictions", fontsize=11)
+    ax3.set_title("Baseline model predictions", fontsize=11)
+
+    cax = fig.add_axes([ax3.get_position().x1+0.01, ax3.get_position().y0, 0.015, ax3.get_position().height])
+    cbar = fig.colorbar(mappable=im3, cax=cax, ticks=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+    cbar.ax.set_yticklabels(["Background", "Spleen", "Right kidney", "Left kidney", "Gall bladder", "Esophagus", "Liver",
+                             "Stomach", "Aorta", "Postcava", "Pancreas", "Right adrenal gland", "Left adrenal gland",
+                             "Duodenum", "Bladder", "Prostate/uterus"])
+    cbar.ax.tick_params(labelsize=8)
+
+    plt.savefig(fname="Example_demo_predictions" + modality + ".png")
+
+
 if __name__ == "__main__":
     image_filename = "/Users/joannaye/Documents/_Imperial_AI_MSc/1_Individual_project/AMOS_dataset/amos22/imagesTr/amos_0508.nii.gz"
     image = sitk.ReadImage(image_filename)
