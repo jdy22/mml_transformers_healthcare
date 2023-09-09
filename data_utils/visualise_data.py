@@ -294,7 +294,7 @@ def plot_save_predictions2(x, y_pred_best, y_pred_baseline, y_true, modality):
     ax3.imshow(np.transpose(x), cmap='gray', clim=(low, high), extent=(0, width, height, 0))
     im3 = ax3.imshow(np.transpose(y_pred_baseline), cmap=organ_cmap2, clim=(-0.5, 15.5), alpha=0.5, extent=(0, width, height, 0))
 
-    for ax in [ax1, ax2]:
+    for ax in [ax1, ax2, ax3]:
         ax.set_xticks([])
         ax.set_xticks([], minor=True)
         ax.set_yticks([])
@@ -311,7 +311,7 @@ def plot_save_predictions2(x, y_pred_best, y_pred_baseline, y_true, modality):
                              "Duodenum", "Bladder", "Prostate/uterus"])
     cbar.ax.tick_params(labelsize=8)
 
-    plt.savefig(fname="Example_demo_predictions" + modality + ".png")
+    plt.savefig(fname="Example_demo_predictions_" + modality + ".png")
 
 
 if __name__ == "__main__":
