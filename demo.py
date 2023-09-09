@@ -77,12 +77,12 @@ def main():
     args.test_mode = True
     args.test_type = "test" # "validation" or "test"
 
-    print("Loading test images")
+    print("LOADING TEST IMAGES")
     val_loader = get_loader_2(args)
     loader_ct = val_loader[0]
     loader_mri = val_loader[1]
 
-    print("Loading context-aware model")
+    print("LOADING CONTEXT-AWARE MODEL")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model_best = UNETR_2D_organ(
         in_channels=args.in_channels,
@@ -104,7 +104,7 @@ def main():
     model_best.eval()
     model_best.to(device)
 
-    print("Loading baseline model")
+    print("LOADING BASELINE MODEL")
     model_baseline = UNETR_2D(
         in_channels=args.in_channels,
         out_channels=args.out_channels,
@@ -125,10 +125,12 @@ def main():
     model_baseline.to(device)
 
     with torch.no_grad():
-        print("Generating example predictions for CT scan")
+        print("GENERATING EXAMPLE PREDICTIONS FOR CT SCAN")
         visualise_predictions(args, model_best, model_baseline, loader_ct, modality="CT")
-        print("Generating example predictions for MRI scan")
+        print("GENERATING EXAMPLE PREDICTIONS FOR MRI SCAN")
         visualise_predictions(args, model_best, model_baseline, loader_mri, modality="MRI")
+    
+    print("DONE")
 
 
 if __name__ == "__main__":
